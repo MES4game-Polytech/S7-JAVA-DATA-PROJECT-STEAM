@@ -1,0 +1,55 @@
+{
+    "name": "DistributedGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.distributor",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"DistributedGames\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"distributor_id\", \"game_id\"}) })"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "distributor",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"distributor_id\", nullable = false)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.distributor.Distributor"],
+            "default": null
+        },
+        {
+            "name": "gameId",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+            ],
+            "type": "long"
+        },
+        {
+            "name": "version",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "price",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"price\", unique = false, nullable = false)"
+            ],
+            "type": "float"
+        },
+        {
+            "name": "sale",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"sale\", unique = false, nullable = true)"
+            ],
+            "type": ["null", "float"],
+            "default": null
+        }
+    ]
+}

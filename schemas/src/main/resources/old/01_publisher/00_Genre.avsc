@@ -1,0 +1,7 @@
+{
+    "name": "Genre",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "doc": "TODO",
+    "type": "enum",
+    "symbols" : ["ACTION", "ADVENTURE", "RPG", "MMO"]
+}

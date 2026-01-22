@@ -1,0 +1,362 @@
+{
+    "protocol": "DistributorDomain",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.distributor",
+    "types": [
+        {
+            "name": "Distributor",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Distributors\")"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "name",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"name\", unique = true, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "trustedPublishers",
+                    "javaAnnotation": [
+                        "org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)",
+                        "jakarta.persistence.Column(name = \"trusted_publisher_ids\", columnDefinition = \"bigint[]\")"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "long"
+                        }
+                    ],
+                    "default": null
+                }
+            ]
+        },
+        {
+            "name": "DistributedGame",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"DistributedGames\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"distributor_id\", \"game_id\"}) })"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "distributor",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"distributor_id\", nullable = false)"
+                    ],
+                    "type": ["null", "Distributor"],
+                    "default": null
+                },
+                {
+                    "name": "gameId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "version",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "price",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"price\", unique = false, nullable = false)"
+                    ],
+                    "type": "float"
+                },
+                {
+                    "name": "sale",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"sale\", unique = false, nullable = true)"
+                    ],
+                    "type": ["null", "float"],
+                    "default": null
+                }
+            ]
+        },
+        {
+            "name": "Player",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Players\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"first_name\", \"last_name\", \"birth_date\"}) })"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "distributor",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"distributor_id\", nullable = true)"
+                    ],
+                    "type": ["null", "Distributor"],
+                    "default": null
+                },
+                {
+                    "name": "pseudo",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"pseudo\", unique = true, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "firstName",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"first_name\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "lastName",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"last_name\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "birthDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"birth_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                },
+                {
+                    "name": "registrationDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"registration_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                },
+                {
+                    "name": "wishedGames",
+                    "javaAnnotation": [
+                        "org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)",
+                        "jakarta.persistence.Column(name = \"whished_game_ids\", columnDefinition = \"bigint[]\")"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "long"
+                        }
+                    ],
+                    "default": null
+                }
+            ]
+        },
+        {
+            "name": "OwnedGame",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"OwnedGames\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"player_id\", \"game_id\"}) })"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "player",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"player_id\", nullable = false)"
+                    ],
+                    "type": ["null", "Player"],
+                    "default": null
+                },
+                {
+                    "name": "gameId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "purchaseDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"purchase_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                },
+                {
+                    "name": "playTime",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"play_time\", unique = false, nullable = true)"
+                    ],
+                    "type": "int"
+                }
+            ]
+        },
+        {
+            "name": "Review",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Reviews\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"player_id\", \"game_id\"}) })"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "player",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"player_id\", nullable = false)"
+                    ],
+                    "type": ["null", "Player"],
+                    "default": null
+                },
+                {
+                    "name": "gameId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "rating",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"rating\", unique = false, nullable = false)"
+                    ],
+                    "type": "int"
+                },
+                {
+                    "name": "comment",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"comment\", unique = false, nullable = true)"
+                    ],
+                    "type": ["null", "string"],
+                    "default": null
+                },
+                {
+                    "name": "publicationDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"publication_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                },
+                {
+                    "name": "positiveReactions",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToMany(cascade = jakarta.persistence.CascadeType.ALL, fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinTable(name = \"positive_reactions\", joinColumns = @jakarta.persistence.JoinColumn(name = \"review_id\"), inverseJoinColumns = @jakarta.persistence.JoinColumn(name = \"player_id\"))"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "Player"
+                        }
+                    ],
+                    "default": null
+                },
+                {
+                    "name": "negativeReactions",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToMany(cascade = jakarta.persistence.CascadeType.ALL, fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinTable(name = \"negative_reactions\", joinColumns = @jakarta.persistence.JoinColumn(name = \"review_id\"), inverseJoinColumns = @jakarta.persistence.JoinColumn(name = \"player_id\"))"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "Player"
+                        }
+                    ],
+                    "default": null
+                }
+            ]
+        }
+    ],
+    "messages": {}
+}

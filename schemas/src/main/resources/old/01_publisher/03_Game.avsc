@@ -1,0 +1,125 @@
+{
+    "name": "Game",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"Games\")"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "id",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Id",
+                "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+            ],
+            "type": ["null", "long"],
+            "default": null
+        },
+        {
+            "name": "game",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = true)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+            "default": null
+        },
+        {
+            "name": "minParentVersion",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"min_parent_version\", unique = false, nullable = true)"
+            ],
+            "type": ["null", "string"],
+            "default": null
+        },
+        {
+            "name": "dlcs",
+            "javaAnnotation": [
+                "jakarta.persistence.OneToMany(mappedBy = \"game\", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)"
+            ],
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "org.pops.et4.jvm.project.schemas.models.publisher.Game"
+                }
+            ],
+            "default": null
+        },
+        {
+            "name": "publisher",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"publisher_id\", nullable = false)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Publisher"],
+            "default": null
+        },
+        {
+            "name": "name",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"name\", unique = true, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "version",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+            ],
+            "type": "string",
+            "default": "1.0.0"
+        },
+        {
+            "name": "releaseDate",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"release_date\", unique = false, nullable = false)"
+            ],
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        },
+        {
+            "name": "platforms",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(value = io.hypersistence.utils.hibernate.type.array.EnumArrayType.class, parameters = @org.hibernate.annotations.Parameter(name = \"sql_array_type\", value = \"platform\"))",
+                "jakarta.persistence.Column(name = \"platforms\", columnDefinition = \"platform[]\")"
+            ],
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "org.pops.et4.jvm.project.schemas.models.Platform"
+                }
+            ],
+            "default": null
+        },
+        {
+            "name": "genres",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(value = io.hypersistence.utils.hibernate.type.array.EnumArrayType.class, parameters = @org.hibernate.annotations.Parameter(name = \"sql_array_type\", value = \"genre\"))",
+                "jakarta.persistence.Column(name = \"genres\", columnDefinition = \"genre[]\")"
+            ],
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "org.pops.et4.jvm.project.schemas.models.publisher.Genre"
+                }
+            ],
+            "default": null
+        }
+    ]
+}

@@ -1,0 +1,64 @@
+package org.pops.et4.jvm.project.player.kafka
+
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.pops.et4.jvm.project.player.db.PlayerDbConfig
+import org.pops.et4.jvm.project.schemas.events.ConsumeLog
+import org.pops.et4.jvm.project.schemas.events.ExampleEvent
+import org.pops.et4.jvm.project.schemas.events.KafkaEvent
+import org.pops.et4.jvm.project.schemas.repositories.player.InstalledGameRepository
+import org.springframework.kafka.annotation.KafkaListener
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import java.util.*
+
+@Service
+class KafkaConsumerService(
+    private val producerService: KafkaProducerService,
+    private val installedGameRepository: InstalledGameRepository
+) {
+
+    private val _logs = ArrayList<ConsumeLog<out KafkaEvent>>()
+
+    val logs: List<ConsumeLog<out KafkaEvent>>
+        get() = Collections.unmodifiableList(_logs)
+
+    companion object {
+        const val EXAMPLE_EVENT_CONSUMER = "example-event-consumer"
+    }
+
+    @KafkaListener(
+        id = EXAMPLE_EVENT_CONSUMER,
+        containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER,
+        topics = [ExampleEvent.TOPIC],
+        groupId = "\${spring.kafka.consumer.group-id}",
+        autoStartup = "false"
+    )
+    @Transactional(transactionManager = PlayerDbConfig.TRANSACTION_MANAGER)
+    fun consumeExampleEvent(record: ConsumerRecord<String, ExampleEvent>) {
+        _logs.add(
+            ConsumeLog(
+                EXAMPLE_EVENT_CONSUMER,
+                Instant.now(),
+                record.key(),
+                record.value()
+            )
+        )
+
+        val event = record.value()
+
+        // To add a new element in the database:
+        // val entity = Player.newBuilder()
+        //        .setGameId(1L)
+        //        .setDistributorId(1L)
+        //        .setName(event.getPayload())
+        //        .setIsCompany(true)
+        //        .build()
+        // val savedInstalledGame = this.installedGameRepository.save(entity)
+
+        // To call a producer if needed:
+        // this.producerService.sendExampleEvent()
+
+        println("[Consumer] ${ExampleEvent.TOPIC}(${record.key()}): FINISHED")
+    }
+}

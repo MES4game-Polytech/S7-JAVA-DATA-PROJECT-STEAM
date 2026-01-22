@@ -1,0 +1,66 @@
+{
+    "name": "Patch",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"Patchs\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"game_id\", \"version\"}) })"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "game",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = false)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+            "default": null
+        },
+        {
+            "name": "version",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+            ],
+            "type": "string",
+            "default": "1.0.0"
+        },
+        {
+            "name": "tags",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(value = io.hypersistence.utils.hibernate.type.array.EnumArrayType.class, parameters = @org.hibernate.annotations.Parameter(name = \"sql_array_type\", value = \"log_tag\"))",
+                "jakarta.persistence.Column(name = \"tags\", columnDefinition = \"log_tag[]\")"
+            ],
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "org.pops.et4.jvm.project.schemas.models.publisher.LogTag"
+                }
+            ],
+            "default": null
+        },
+        {
+            "name": "description",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"description\", unique = false, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "publicationDate",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"publication_date\", unique = false, nullable = false)"
+            ],
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        }
+    ]
+}

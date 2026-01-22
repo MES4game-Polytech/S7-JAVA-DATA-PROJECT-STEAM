@@ -1,0 +1,39 @@
+{
+    "name": "Publisher",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"Publishers\")"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "id",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Id",
+                "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+            ],
+            "type": ["null", "long"],
+            "default": null
+        },
+        {
+            "name": "name",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"name\", unique = true, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "isCompany",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"is_company\", unique = false, nullable = false)"
+            ],
+            "type": "boolean",
+            "default": true
+        }
+    ]
+}

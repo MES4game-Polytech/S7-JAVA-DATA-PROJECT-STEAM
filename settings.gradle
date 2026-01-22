@@ -1,0 +1,5 @@
+rootProject.name = 'game-platform'
+include 'schemas'
+include 'publisher-service'
+include 'distributor-service'
+include 'player-service'

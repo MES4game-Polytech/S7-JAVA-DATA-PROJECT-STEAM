@@ -1,0 +1,45 @@
+{
+    "name": "Distributor",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.distributor",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"Distributors\")"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "id",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Id",
+                "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+            ],
+            "type": ["null", "long"],
+            "default": null
+        },
+        {
+            "name": "name",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"name\", unique = true, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "trustedPublishers",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.array.ListArrayType.class)",
+                "jakarta.persistence.Column(name = \"trusted_publisher_ids\", columnDefinition = \"bigint[]\")"
+            ],
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "long"
+                }
+            ],
+            "default": null
+        }
+    ]
+}

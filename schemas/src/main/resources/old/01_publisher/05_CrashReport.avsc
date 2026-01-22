@@ -1,0 +1,75 @@
+{
+    "name": "CrashReport",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"CrashReports\")"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "game",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = false)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+            "default": null
+        },
+        {
+            "name": "distributorId",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"distributor_id\", unique = false, nullable = false)"
+            ],
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType.class)",
+                "jakarta.persistence.Column(name = \"platform\", columnDefinition = \"platform\")"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.Platform"],
+            "default": null
+        },
+        {
+            "name": "version",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "errorCode",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"error_code\", unique = false, nullable = false)"
+            ],
+            "type": "int"
+        },
+        {
+            "name": "message",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "reportDate",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"report_date\", unique = false, nullable = false)"
+            ],
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        }
+    ]
+}

@@ -1,0 +1,126 @@
+package org.pops.et4.jvm.project.player
+
+import org.pops.et4.jvm.project.player.kafka.KafkaLifecycleService
+import org.pops.et4.jvm.project.player.kafka.KafkaProducerService
+import org.pops.et4.jvm.project.schemas.models.player.InstalledGame
+import org.pops.et4.jvm.project.schemas.models.player.Platform
+import org.pops.et4.jvm.project.schemas.repositories.player.InstalledGameRepository
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.CommandLineRunner
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+import org.springframework.context.annotation.Bean
+import java.util.*
+
+@SpringBootApplication
+class App {
+
+	companion object {
+        const val CLI_BEAN_NAME = "distributorServiceCLI"
+    }
+
+    @Bean(name = App.CLI_BEAN_NAME)
+    fun interactiveTestRunner(
+        @Qualifier(KafkaProducerService.BEAN_NAME)producer: KafkaProducerService,
+        @Qualifier(KafkaLifecycleService.BEAN_NAME)lifecycle: KafkaLifecycleService,
+        @Qualifier(InstalledGameRepository.BEAN_NAME)installedGameRepository: InstalledGameRepository
+    ): CommandLineRunner {
+        return CommandLineRunner {
+            Thread.sleep(1000)
+
+            Scanner(System.`in`).use { scanner ->
+                var running = true
+
+                while (running) {
+                    printMenu()
+                    if (!scanner.hasNextLine()) break
+                    val input = scanner.nextLine().trim()
+                    if (input.isEmpty()) continue
+
+                    val cmd = input.split("\\s+".toRegex()).toTypedArray()
+                    val args = cmd.sliceArray(1 until cmd.size)
+
+                    println("---------------------------------")
+
+                    when (cmd[0]) {
+                        "exit", "quit" -> {
+                            println("Exiting Manual Test Mode...")
+                            running = false
+                        }
+                        "start" -> {
+                            println("> Starting Listener(s)")
+                            args.forEach { lifecycle.startListener(it) }
+                        }
+                        "stop" -> {
+                            println("> Stopping Listener(s)")
+                            args.forEach { lifecycle.stopListener(it) }
+                        }
+                        "send" -> {
+                            println("> Sending 'ExampleEvent'...")
+                            producer.sendExampleEvent(args.joinToString(" "))
+                        }
+                        "get-installed" -> {
+                            println("> Get installed games...")
+                            installedGameRepository.findAll().forEach { println(it) }
+                        }
+                        "add-installed" -> {
+                            println("> Adding new installed game...")
+                            if (args.size < 4) {
+                                System.err.println("Too few arguments, required: 4")
+                            } else {
+                                val entity = InstalledGame.newBuilder()
+                                    .setId(null)
+                                    .setPlayerId(args[0].toLong())
+                                    .setGameId(args[1].toLong())
+                                    .setPlatform(Platform.valueOf(args[2]))
+                                    .setInstalledVersion(args[3])
+                                    .build()
+                                val savedInstalledGame = installedGameRepository.save(entity)
+                                println("Added installed game: $savedInstalledGame")
+                            }
+                        }
+                        "remove-installed" -> {
+                            println("> Removing installed game(s)...")
+                            for (installedGameId in args) {
+                                try {
+                                    val id = installedGameId.toLong()
+                                    val playerOpt = installedGameRepository.findById(id)
+                                    if (playerOpt.isEmpty) throw RuntimeException()
+
+                                    val player = playerOpt.get()
+                                    installedGameRepository.delete(player)
+                                    println("Removed installed game: $player")
+                                } catch (e: Exception) {
+                                    println("Error: '$installedGameId' is not a valid installed game ID.")
+                                }
+                            }
+                        }
+                        else -> println("Invalid option. Please try again.")
+                    }
+
+                    Thread.sleep(500)
+                }
+            }
+        }
+    }
+
+    private fun printMenu() {
+        println()
+        println("=================================")
+        println("          Player Service         ")
+        println("=================================")
+        println("* Exit                     exit/quit")
+        println("* Start Listener           start [listenerId...]")
+        println("* Stop Listener            stop [listenerId...]")
+        println("* Send Payload             send [payload]")
+        println("* Get Installed Games      get-installed")
+        println("* Add Installed Game       add-installed [playerId] [gameId] [platform] [version]")
+        println("* Remove Installed Game    remove-installed [id...]")
+        println()
+        print("> ")
+    }
+}
+
+fun main(args: Array<String>) {
+    runApplication<App>(*args)
+}

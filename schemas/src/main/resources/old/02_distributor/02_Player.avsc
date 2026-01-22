@@ -1,0 +1,93 @@
+{
+    "name": "Player",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.distributor",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"Players\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"first_name\", \"last_name\", \"birth_date\"}) })"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "id",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Id",
+                "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+            ],
+            "type": ["null", "long"],
+            "default": null
+        },
+        {
+            "name": "distributor",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"distributor_id\", nullable = true)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.distributor.Distributor"],
+            "default": null
+        },
+        {
+            "name": "pseudo",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"pseudo\", unique = true, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "firstName",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"first_name\", unique = false, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "lastName",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"last_name\", unique = false, nullable = false)"
+            ],
+            "type": "string"
+        },
+        {
+            "name": "birthDate",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"birth_date\", unique = false, nullable = false)"
+            ],
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        },
+        {
+            "name": "registrationDate",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"registration_date\", unique = false, nullable = false)"
+            ],
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        },
+        {
+            "name": "wishedGames",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.array.ListArrayType.class)",
+                "jakarta.persistence.Column(name = \"whished_game_ids\", columnDefinition = \"bigint[]\")"
+            ],
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "long"
+                }
+            ],
+            "default": null
+        }
+    ]
+}

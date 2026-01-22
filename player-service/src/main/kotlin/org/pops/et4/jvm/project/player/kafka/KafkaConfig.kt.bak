@@ -1,0 +1,93 @@
+package org.pops.et4.jvm.project.player.kafka
+
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import io.confluent.kafka.serializers.KafkaAvroSerializer
+import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.kafka.annotation.EnableKafka
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.core.*
+import org.springframework.kafka.listener.ConsumerRecordRecoverer
+import org.springframework.kafka.listener.DefaultErrorHandler
+import org.springframework.util.backoff.FixedBackOff
+
+@Configuration
+@EnableKafka
+class KafkaConfig {
+
+    @Value("\${spring.kafka.bootstrap-servers}")
+    private lateinit var bootstrapServers: String
+
+    @Value("\${spring.kafka.properties.schema.registry.url}")
+    private lateinit var schemaRegistryUrl: String
+
+    @Value("\${spring.kafka.consumer.group-id}")
+    private lateinit var groupId: String
+
+    companion object {
+        const val KAFKA_TEMPLATE = "playerServiceKafkaTemplate"
+        const val PRODUCER_FACTORY = "playerServiceProducerFactory"
+        const val CONSUMER_FACTORY = "playerServiceConsumerFactory"
+        const val ERROR_HANDLER = "playerServiceErrorHandler"
+        const val KAFKA_LISTENER_CONTAINER = "playerServiceKafkaListenerContainer"
+    }
+
+    @Bean(name = [KAFKA_TEMPLATE])
+    fun kafkaTemplate(): KafkaTemplate<String, Any> {
+        return KafkaTemplate(producerFactory())
+    }
+
+    @Bean(name = [PRODUCER_FACTORY])
+    fun producerFactory(): ProducerFactory<String, Any> {
+        val configProps = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to KafkaAvroSerializer::class.java,
+            "schema.registry.url" to schemaRegistryUrl
+        )
+        return DefaultKafkaProducerFactory(configProps)
+    }
+
+    @Bean(name = [CONSUMER_FACTORY])
+    fun consumerFactory(): ConsumerFactory<String, Any> {
+        val props = mapOf(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ConsumerConfig.GROUP_ID_CONFIG to groupId,
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
+            "schema.registry.url" to schemaRegistryUrl,
+            KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG to true,
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest"
+        )
+        return DefaultKafkaConsumerFactory(props)
+    }
+
+    @Bean(name = [ERROR_HANDLER])
+    fun errorHandler(): DefaultErrorHandler {
+        val recoverer = ConsumerRecordRecoverer { record: ConsumerRecord<*, *>, exception: Exception ->
+            System.err.println("------------------------------------------------")
+            System.err.println(" [ERROR] Failed to consume message!")
+            System.err.println(" Key: ${record.key()}")
+            System.err.println(" Error: ${exception.message}")
+            System.err.println(" -> Skipping message and committing offset.")
+            System.err.println("------------------------------------------------")
+        }
+
+        return DefaultErrorHandler(recoverer, FixedBackOff(0L, 0L))
+    }
+
+    @Bean(name = [KAFKA_LISTENER_CONTAINER])
+    fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, Any> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, Any>()
+        factory.setConsumerFactory(consumerFactory())
+        factory.setCommonErrorHandler(errorHandler())
+        return factory
+    }
+}

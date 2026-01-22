@@ -1,0 +1,14 @@
+{
+    "name": "ExampleEvent",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "TODO",
+    "type": "record",
+    "fields": [
+        {
+            "name": "payload",
+            "doc": "TODO",
+            "type": "string",
+            "default": "foo"
+        }
+    ]
+}

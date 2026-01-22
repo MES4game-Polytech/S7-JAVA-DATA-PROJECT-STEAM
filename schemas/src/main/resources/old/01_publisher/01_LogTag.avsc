@@ -1,0 +1,7 @@
+{
+    "name": "LogTag",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "doc": "TODO",
+    "type": "enum",
+    "symbols" : ["ADD_FEATURE", "REMOVE_FEATURE", "SECURITY_FIX", "BUG_FIX"]
+}

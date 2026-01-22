@@ -1,0 +1,39 @@
+package org.pops.et4.jvm.project.player.kafka
+
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry
+import org.springframework.stereotype.Service
+
+@Service(KafkaLifecycleService.BEAN_NAME)
+class KafkaLifecycleService(
+    private val registry: KafkaListenerEndpointRegistry
+) {
+	companion object {
+        const val BEAN_NAME = "playerServiceKafkaLifecycleService"
+    }
+
+    fun startListener(listenerId: String) {
+        val container = registry.getListenerContainer(listenerId)
+
+        when {
+            container == null -> println("[Lifecycle] Listener $listenerId not found.")
+            container.isRunning -> println("[Lifecycle] Listener $listenerId is already running.")
+            else -> {
+                println("[Lifecycle] Starting listener: $listenerId")
+                container.start()
+            }
+        }
+    }
+
+    fun stopListener(listenerId: String) {
+        val container = registry.getListenerContainer(listenerId)
+
+        when {
+            container == null -> println("[Lifecycle] Listener $listenerId not found.")
+            !container.isRunning -> println("[Lifecycle] Listener $listenerId is not running.")
+            else -> {
+                println("[Lifecycle] Stopping listener: $listenerId")
+                container.stop()
+            }
+        }
+    }
+}

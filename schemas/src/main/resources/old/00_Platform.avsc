@@ -1,0 +1,8 @@
+{
+    "name": "Platform",
+    "namespace": "org.pops.et4.jvm.project.schemas.models",
+    "doc": "TODO",
+    "type": "enum",
+    "symbols" : ["WINDOWS", "MACOS", "LINUX", "PS5", "PS4", "XBOX_SERIES", "XBOX_ONE", "SWITCH2", "SWITCH"],
+    "default": "WINDOWS"
+}

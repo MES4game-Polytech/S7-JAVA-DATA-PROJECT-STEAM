@@ -1,0 +1,70 @@
+{
+    "protocol": "PlayerDomain",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.player",
+    "types": [
+        {
+            "name": "Platform",
+            "doc": "TODO",
+            "type": "enum",
+            "symbols" : ["WINDOWS", "MACOS", "LINUX", "PS5", "PS4", "XBOX_SERIES", "XBOX_ONE", "SWITCH2", "SWITCH"],
+            "default": "WINDOWS"
+        },
+        {
+            "name": "InstalledGame",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"InstalledGames\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"game_id\", \"player_id\", \"platform\"}) })"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "gameId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "playerId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"player_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "platform",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)",
+                        "jakarta.persistence.Column(name = \"platform\")"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.player.Platform"],
+                    "default": null
+                },
+                {
+                    "name": "installedVersion",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"installed_version\", unique = false, nullable = false)"
+                    ],
+                    "type": "string",
+                    "default": "1.0.0"
+                }
+            ]
+        }
+    ],
+    "messages": {}
+}

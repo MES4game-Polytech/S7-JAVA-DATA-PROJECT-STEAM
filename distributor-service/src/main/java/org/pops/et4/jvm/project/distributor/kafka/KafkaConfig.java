@@ -1,0 +1,96 @@
+package org.pops.et4.jvm.project.distributor.kafka;
+
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.ConsumerRecordRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration(KafkaConfig.BEAN_NAME)
+@EnableKafka
+public class KafkaConfig {
+
+    public static final String BEAN_NAME = "distributorServiceKafkaConfig";
+
+    public static final String KAFKA_TEMPLATE_BEAN_NAME = "distributorServiceKafkaTemplate";
+    public static final String PRODUCER_FACTORY_BEAN_NAME = "distributorServiceProducerFactory";
+    public static final String CONSUMER_FACTORY_BEAN_NAME = "distributorServiceConsumerFactory";
+    public static final String ERROR_HANDLER_BEAN_NAME = "distributorServiceErrorHandler";
+    public static final String KAFKA_LISTENER_CONTAINER_BEAN_NAME = "distributorServiceKafkaListenerContainerFactory";
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.properties.schema.registry.url}")
+    private String schemaRegistryUrl;
+
+    @Value("${spring.kafka.consumer.group-id}")
+    private String groupId;
+
+    @Bean(name = KafkaConfig.KAFKA_TEMPLATE_BEAN_NAME)
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean(name = KafkaConfig.PRODUCER_FACTORY_BEAN_NAME)
+    public ProducerFactory<String, Object> producerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        configProps.put("schema.registry.url", schemaRegistryUrl);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean(name = KafkaConfig.CONSUMER_FACTORY_BEAN_NAME)
+    public ConsumerFactory<String, Object> consumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+        props.put("schema.registry.url", schemaRegistryUrl);
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true); // Matches your YAML
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        return new DefaultKafkaConsumerFactory<>(props);
+    }
+
+    @Bean(name = KafkaConfig.ERROR_HANDLER_BEAN_NAME)
+    public DefaultErrorHandler errorHandler() {
+        ConsumerRecordRecoverer recoverer = (ConsumerRecord<?, ?> record, Exception exception) -> {
+            System.err.println("------------------------------------------------");
+            System.err.println(" [ERROR] Failed to consume message!");
+            System.err.println(" Key: " + record.key());
+            System.err.println(" Error: " + exception.getMessage());
+            System.err.println(" -> Skipping message and committing offset.");
+            System.err.println("------------------------------------------------");
+        };
+
+        return new DefaultErrorHandler(recoverer, new FixedBackOff(0L, 0L));
+    }
+
+    @Bean(name = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME)
+    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(this.consumerFactory());
+        factory.setCommonErrorHandler(this.errorHandler());
+        return factory;
+    }
+
+}

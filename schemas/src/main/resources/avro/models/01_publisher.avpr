@@ -1,0 +1,420 @@
+{
+    "protocol": "PublisherDomain",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.publisher",
+    "types": [
+        {
+            "name": "Platform",
+            "doc": "TODO",
+            "type": "enum",
+            "symbols" : ["WINDOWS", "MACOS", "LINUX", "PS5", "PS4", "XBOX_SERIES", "XBOX_ONE", "SWITCH2", "SWITCH"],
+            "default": "WINDOWS"
+        },
+        {
+            "name": "Genre",
+            "doc": "TODO",
+            "type": "enum",
+            "symbols": ["ACTION", "ADVENTURE", "RPG", "MMO"]
+        },
+        {
+            "name": "LogTag",
+            "doc": "TODO",
+            "type": "enum",
+            "symbols": ["ADD_FEATURE", "REMOVE_FEATURE", "SECURITY_FIX", "BUG_FIX"]
+        },
+        {
+            "name": "Publisher",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Publishers\")"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "name",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"name\", unique = true, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "isCompany",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"is_company\", unique = false, nullable = false)"
+                    ],
+                    "type": "boolean",
+                    "default": true
+                }
+            ]
+        },
+        {
+            "name": "Game",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Games\")"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "game",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = true)"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+                    "default": null
+                },
+                {
+                    "name": "minParentVersion",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"min_parent_version\", unique = false, nullable = true)"
+                    ],
+                    "type": ["null", "string"],
+                    "default": null
+                },
+                {
+                    "name": "dlcs",
+                    "javaAnnotation": [
+                        "jakarta.persistence.OneToMany(mappedBy = \"game\", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "org.pops.et4.jvm.project.schemas.models.publisher.Game"
+                        }
+                    ],
+                    "default": null
+                },
+                {
+                    "name": "publisher",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"publisher_id\", nullable = false)"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Publisher"],
+                    "default": null
+                },
+                {
+                    "name": "name",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"name\", unique = true, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "version",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+                    ],
+                    "type": "string",
+                    "default": "1.0.0"
+                },
+                {
+                    "name": "releaseDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"release_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                },
+                {
+                    "name": "platforms",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ElementCollection(targetClass = org.pops.et4.jvm.project.schemas.models.publisher.Platform.class)",
+                        "jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)",
+                        "jakarta.persistence.CollectionTable(name = \"game_platforms\", joinColumns = @jakarta.persistence.JoinColumn(name = \"game_id\"))",
+                        "jakarta.persistence.Column(name = \"platform\")"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "org.pops.et4.jvm.project.schemas.models.publisher.Platform"
+                        }
+                    ],
+                    "default": null
+                },
+                {
+                    "name": "genres",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ElementCollection(targetClass = org.pops.et4.jvm.project.schemas.models.publisher.Genre.class)",
+                        "jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)",
+                        "jakarta.persistence.CollectionTable(name = \"game_genres\", joinColumns = @jakarta.persistence.JoinColumn(name = \"game_id\"))",
+                        "jakarta.persistence.Column(name = \"genre\")"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "org.pops.et4.jvm.project.schemas.models.publisher.Genre"
+                        }
+                    ],
+                    "default": null
+                }
+            ]
+        },
+        {
+            "name": "Review",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Reviews\")"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "game",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = false)"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+                    "default": null
+                },
+                {
+                    "name": "distributorId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"distributor_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "rating",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"rating\", unique = false, nullable = false)"
+                    ],
+                    "type": "int"
+                },
+                {
+                    "name": "comment",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"comment\", unique = false, nullable = true)"
+                    ],
+                    "type": ["null", "string"],
+                    "default": null
+                },
+                {
+                    "name": "publicationDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"publication_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "CrashReport",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"CrashReports\")"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "game",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = false)"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+                    "default": null
+                },
+                {
+                    "name": "distributorId",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"distributor_id\", unique = false, nullable = false)"
+                    ],
+                    "type": "long"
+                },
+                {
+                    "name": "platform",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)",
+                        "jakarta.persistence.Column(name = \"platform\")"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Platform"],
+                    "default": null
+                },
+                {
+                    "name": "version",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "errorCode",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"error_code\", unique = false, nullable = false)"
+                    ],
+                    "type": "int"
+                },
+                {
+                    "name": "message",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"message\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "reportDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"report_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Patch",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Entity",
+                "jakarta.persistence.Table(name = \"Patchs\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"game_id\", \"version\"}) })"
+            ],
+            "type": "record",
+            "fields": [
+                {
+                    "name": "id",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Id",
+                        "jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)"
+                    ],
+                    "type": ["null", "long"],
+                    "default": null
+                },
+                {
+                    "name": "game",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                        "jakarta.persistence.JoinColumn(name = \"game_id\", nullable = false)"
+                    ],
+                    "type": ["null", "org.pops.et4.jvm.project.schemas.models.publisher.Game"],
+                    "default": null
+                },
+                {
+                    "name": "version",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"version\", unique = false, nullable = false)"
+                    ],
+                    "type": "string",
+                    "default": "1.0.0"
+                },
+                {
+                    "name": "tags",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.ElementCollection(targetClass = org.pops.et4.jvm.project.schemas.models.publisher.LogTag.class)",
+                        "jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)",
+                        "jakarta.persistence.CollectionTable(name = \"patch_tags\", joinColumns = @jakarta.persistence.JoinColumn(name = \"patch_id\"))",
+                        "jakarta.persistence.Column(name = \"tag\")"
+                    ],
+                    "type": [
+                        "null",
+                        {
+                            "type": "array",
+                            "items": "org.pops.et4.jvm.project.schemas.models.publisher.LogTag"
+                        }
+                    ],
+                    "default": null
+                },
+                {
+                    "name": "description",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"description\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
+                    "name": "publicationDate",
+                    "doc": "TODO",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"publication_date\", unique = false, nullable = false)"
+                    ],
+                    "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                    }
+                }
+            ]
+        }
+    ],
+    "messages": {}
+}

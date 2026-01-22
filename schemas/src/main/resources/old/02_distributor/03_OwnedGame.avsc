@@ -1,0 +1,49 @@
+{
+    "name": "OwnedGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.distributor",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"OwnedGames\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"player_id\", \"game_id\"}) })"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "player",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)",
+                "jakarta.persistence.JoinColumn(name = \"player_id\", nullable = false)"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.distributor.Player"],
+            "default": null
+        },
+        {
+            "name": "gameId",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+            ],
+            "type": "long"
+        },
+        {
+            "name": "purchaseDate",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"purchase_date\", unique = false, nullable = false)"
+            ],
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        },
+        {
+            "name": "playTime",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"play_time\", unique = false, nullable = true)"
+            ],
+            "type": "int"
+        }
+    ]
+}

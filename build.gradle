@@ -1,0 +1,113 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.1' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'org.jetbrains.kotlin.jvm' version '2.2.21' apply false
+    id 'org.jetbrains.kotlin.plugin.spring' version '2.2.21' apply false
+    id 'org.jetbrains.kotlin.plugin.jpa' version '2.2.21' apply false
+    id 'io.github.martinsjavacode.avro-gradle-plugin' version '1.2.0' apply false
+    id 'com.vaadin' version '25.0.3' apply false
+}
+
+allprojects {
+    group = 'org.pops.et4.jvm.project'
+    version = '1.0.0'
+
+    apply plugin: 'java'
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://packages.confluent.io/maven/" }
+    }
+}
+
+tasks.register('dockerCompose', Exec) {
+    group = 'project'
+    description = 'Runs docker containers of project'
+
+    commandLine 'docker', 'compose', 'up', '-d'
+    workingDir '.'
+}
+
+tasks.register('cleanProject') {
+    group = 'project'
+    description = 'Builds the project'
+
+    dependsOn ':clean', ':schemas:clean', ':publisher-service:clean', ':distributor-service:clean', ':player-service:clean'
+}
+
+tasks.register('avroProject') {
+    group = 'project'
+    description = 'Builds the project'
+
+    dependsOn ':schemas:generateAvroClasses'
+}
+
+tasks.register('buildProject') {
+    group = 'project'
+    description = 'Builds the project'
+
+    dependsOn ':build', ':schemas:build', ':publisher-service:build', ':distributor-service:build', ':player-service:build'
+
+    def schemasBuildTask = tasks.getByPath(':schemas:build')
+    def publisherBuildTask = tasks.getByPath(':publisher-service:build')
+    def distributorBuildTask = tasks.getByPath(':distributor-service:build')
+    def playerBuildTask = tasks.getByPath(':player-service:build')
+    def buildTask = tasks.getByPath(':build')
+
+    publisherBuildTask.mustRunAfter schemasBuildTask
+    distributorBuildTask.mustRunAfter publisherBuildTask
+    playerBuildTask.mustRunAfter distributorBuildTask
+    buildTask.mustRunAfter playerBuildTask
+}
+
+tasks.register('runPublisher') {
+    group = 'project'
+    description = 'Runs the project'
+
+    dependsOn ':dockerCompose', ':publisher-service:bootRun'
+
+    def dockerTask = tasks.getByPath(':dockerCompose')
+    def runTask = tasks.getByPath(':publisher-service:bootRun')
+
+    runTask.mustRunAfter dockerTask
+}
+
+tasks.register('runDistributor') {
+    group = 'project'
+    description = 'Runs the project'
+
+    dependsOn ':dockerCompose', ':distributor-service:bootRun'
+
+    def dockerTask = tasks.getByPath(':dockerCompose')
+    def runTask = tasks.getByPath(':distributor-service:bootRun')
+
+    runTask.mustRunAfter dockerTask
+}
+
+tasks.register('runPlayer') {
+    group = 'project'
+    description = 'Runs the project'
+
+    dependsOn ':dockerCompose', ':player-service:bootRun'
+
+    def dockerTask = tasks.getByPath(':dockerCompose')
+    def runTask = tasks.getByPath(':player-service:bootRun')
+
+    runTask.mustRunAfter dockerTask
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}

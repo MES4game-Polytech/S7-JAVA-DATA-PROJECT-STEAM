@@ -1,0 +1,37 @@
+package org.pops.et4.jvm.project.distributor.kafka;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.listener.MessageListenerContainer;
+import org.springframework.stereotype.Service;
+
+@Service(KafkaLifecycleService.BEAN_NAME)
+public class KafkaLifecycleService {
+
+    public static final String BEAN_NAME = "distributorServiceKafkaLifecycleService";
+
+    @Autowired
+    private KafkaListenerEndpointRegistry registry;
+
+    public void startListener(String listenerId) {
+        MessageListenerContainer container = this.registry.getListenerContainer(listenerId);
+
+        if (container == null)          System.out.println("[Lifecycle] Listener " + listenerId + " not found.");
+        else if (container.isRunning()) System.out.println("[Lifecycle] Listener " + listenerId + " is already running.");
+        else {
+            System.out.println("[Lifecycle] Starting listener: " + listenerId);
+            container.start();
+        }
+    }
+
+    public void stopListener(String listenerId) {
+        MessageListenerContainer container = this.registry.getListenerContainer(listenerId);
+
+        if (container == null)           System.out.println("[Lifecycle] Listener " + listenerId + " not found.");
+        else if (!container.isRunning()) System.out.println("[Lifecycle] Listener " + listenerId + " is not running.");
+        else {
+            System.out.println("[Lifecycle] Stopping listener: " + listenerId);
+            container.stop();
+        }
+    }
+}

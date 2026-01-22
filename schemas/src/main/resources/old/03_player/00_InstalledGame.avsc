@@ -1,0 +1,47 @@
+{
+    "name": "InstalledGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.models.player",
+    "doc": "TODO",
+    "javaAnnotation": [
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.Table(name = \"InstalledGames\", uniqueConstraints = { @jakarta.persistence.UniqueConstraint(columnNames = {\"game_id\", \"player_id\", \"platform\"}) })"
+    ],
+    "type": "record",
+    "fields": [
+        {
+            "name": "gameId",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"game_id\", unique = false, nullable = false)"
+            ],
+            "type": "long"
+        },
+        {
+            "name": "distributorId",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"distributor_id\", unique = false, nullable = false)"
+            ],
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType.class)",
+                "jakarta.persistence.Column(name = \"platform\", columnDefinition = \"platform\")"
+            ],
+            "type": ["null", "org.pops.et4.jvm.project.schemas.models.Platform"],
+            "default": null
+        },
+        {
+            "name": "installedVersion",
+            "doc": "TODO",
+            "javaAnnotation": [
+                "jakarta.persistence.Column(name = \"installed_version\", unique = false, nullable = false)"
+            ],
+            "type": "string",
+            "default": "1.0.0"
+        }
+    ]
+}
