@@ -1,0 +1,23 @@
+{
+    "name": "InstallGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player installs a game",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player installing the game",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game being installed",
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "Platform on which the game is being installed",
+            "type": "string"
+        }
+    ]
+}

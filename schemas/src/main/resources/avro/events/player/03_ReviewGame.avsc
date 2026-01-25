@@ -1,0 +1,29 @@
+{
+    "name": "ReviewGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player submits a game review",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player submitting the review",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game being reviewed",
+            "type": "long"
+        },
+        {
+            "name": "rating",
+            "doc": "Rating given (e.g., 1-5 )",
+            "type": "int"
+        },
+        {
+            "name": "comment",
+            "doc": "Review comment text",
+            "type": ["null", "string"],
+            "default": null
+        }
+    ]
+}
