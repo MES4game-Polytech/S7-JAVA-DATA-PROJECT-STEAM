@@ -13,9 +13,7 @@ class KafkaProducerService(
     @Qualifier(KafkaConfig.KAFKA_TEMPLATE_BEAN_NAME)
     private val kafkaTemplate: KafkaTemplate<String, Any>,
     @Qualifier(InstalledGameRepository.BEAN_NAME)
-    private val installedGameRepository: InstalledGameRepository,
-    @Qualifier(org.pops.et4.jvm.project.schemas.repositories.publisher.GameRepository.BEAN_NAME)
-    private val gameRepository: org.pops.et4.jvm.project.schemas.repositories.publisher.GameRepository
+    private val installedGameRepository: InstalledGameRepository
 ) {
 	companion object {
         const val BEAN_NAME = "playerServiceKafkaProducerService"
@@ -27,24 +25,6 @@ class KafkaProducerService(
             "XBOX_SERIES", "XBOX_ONE", 
             "SWITCH2", "SWITCH"
         )
-        
-        /**
-         * Compares two version strings (e.g., "1.2.3" vs "1.3.0")
-         * Returns: positive if v1 > v2, negative if v1 < v2, zero if equal
-         */
-        fun compareVersions(v1: String, v2: String): Int {
-            val parts1 = v1.split(".").map { it.toIntOrNull() ?: 0 }
-            val parts2 = v2.split(".").map { it.toIntOrNull() ?: 0 }
-            val maxLength = maxOf(parts1.size, parts2.size)
-            
-            for (i in 0 until maxLength) {
-                val p1 = parts1.getOrNull(i) ?: 0
-                val p2 = parts2.getOrNull(i) ?: 0
-                val diff = p1 - p2
-                if (diff != 0) return diff
-            }
-            return 0
-        }
     }
 
 
@@ -120,38 +100,6 @@ class KafkaProducerService(
             return
         }
         
-        // Get game info from publisher database
-        val game = gameRepository.findById(gameId).orElse(null)
-        if (game == null) {
-            println("[Error] Game not found: gameId=${gameId}")
-            return
-        }
-        
-        val gameVersion = game.version ?: "1.0.0"
-        
-        // Check if game is already installed
-        val existingGames = installedGameRepository.findAll()
-            .filter { it.playerId == playerId && it.gameId == gameId && it.platform?.toString() == platform }
-        
-        if (existingGames.isNotEmpty()) {
-            println("[Error] Game already installed: Player=${playerId}, Game=${gameId}, Platform=${platform}")
-            println("        Current version: ${existingGames.first().installedVersion}")
-            println("        Use 'update' command to update the version instead.")
-            return
-        }
-        
-        // Update database: Add to installed games with actual game version
-        val installedGame = org.pops.et4.jvm.project.schemas.models.player.InstalledGame.newBuilder()
-            .setId(null)
-            .setPlayerId(playerId)
-            .setGameId(gameId)
-            .setPlatform(org.pops.et4.jvm.project.schemas.models.player.Platform.valueOf(platform))
-            .setInstalledVersion(gameVersion)
-            .build()
-        
-        val saved = installedGameRepository.save(installedGame)
-        println("[Database] Installed game added: ID=${saved.id}, Player=${playerId}, Game=${gameId}, Platform=${platform}, Version=${gameVersion}")
-        
         // Send Kafka event
         val topic = InstallGame.TOPIC
         val key = UUID.randomUUID().toString()
@@ -176,63 +124,26 @@ class KafkaProducerService(
             return
         }
         
-        // Get game info from publisher database
-        val game = gameRepository.findById(gameId).orElse(null)
-        if (game == null) {
-            println("[Error] Game not found: gameId=${gameId}")
+        // Get installed game version from database
+        val installedGames = installedGameRepository.findAll()
+            .filter { it.playerId == playerId && it.gameId == gameId && it.platform?.toString() == platform }
+        
+        if (installedGames.isEmpty()) {
+            println("[Error] Game not installed. Cannot update.")
+            println("        Use 'install' command to install the game first.")
             return
         }
         
-        val newGameVersion = game.version ?: "1.0.0"
+        val currentInstalledVersion = installedGames.first().installedVersion ?: "1.0.0"
         
-        // Update database: Update installed game version
-        try {
-            val installedGames = installedGameRepository.findAll()
-                .filter { it.playerId == playerId && it.gameId == gameId && it.platform?.toString() == platform }
-            
-            if (installedGames.isEmpty()) {
-                println("[Error] Game not installed. Cannot update.")
-                println("        Use 'install' command to install the game first.")
-                return
-            }
-            
-            val installedGame = installedGames.first()
-            val currentVersion = installedGame.installedVersion ?: "1.0.0"
-            
-            // Check if new version is higher than current version
-            val versionComparison = compareVersions(newGameVersion, currentVersion)
-            if (versionComparison <= 0) {
-                println("[Error] Cannot update game. New version ($newGameVersion) is not higher than current version ($currentVersion).")
-                println("        Current version: $currentVersion")
-                println("        Available version: $newGameVersion")
-                return
-            }
-            
-            // Proceed with update
-            val updatedGame = org.pops.et4.jvm.project.schemas.models.player.InstalledGame.newBuilder()
-                .setId(installedGame.id)
-                .setPlayerId(installedGame.playerId)
-                .setGameId(installedGame.gameId)
-                .setPlatform(installedGame.platform)
-                .setInstalledVersion(newGameVersion)
-                .build()
-            
-            val saved = installedGameRepository.save(updatedGame)
-            println("[Database] Game updated: ID=${saved.id}, Player=${playerId}, Game=${gameId}, Platform=${platform}")
-            println("            Old Version: ${currentVersion} → New Version: ${newGameVersion}")
-        } catch (e: Exception) {
-            println("[Database] Error updating game: ${e.message}")
-            return
-        }
-        
-        // Send Kafka event
+        // Send Kafka event with the installed version
         val topic = UpdateGame.TOPIC
         val key = UUID.randomUUID().toString()
         val event = UpdateGame.newBuilder()
             .setPlayerId(playerId)
             .setGameId(gameId)
             .setPlatform(platform)
-            .setInstalledVersion(newGameVersion)
+            .setInstalledVersion(currentInstalledVersion)
             .build()
 
         val future = kafkaTemplate.send(topic, key, event)

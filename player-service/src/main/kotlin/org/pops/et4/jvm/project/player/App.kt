@@ -234,6 +234,82 @@ class App {
                         }
                         
                         // === DATABASE COMMANDS ===
+                        "db-install" -> {
+                            println("> Database: Adding installed game...")
+                            if (args.size < 4) {
+                                System.err.println("Usage: db-install [playerId] [gameId] [platform] [version]")
+                            } else if (args[2] !in VALID_PLATFORMS) {
+                                System.err.println("Error: Invalid platform '${args[2]}'. Valid platforms: ${VALID_PLATFORMS.joinToString(", ")}")
+                            } else {
+                                try {
+                                    val installedGame = org.pops.et4.jvm.project.schemas.models.player.InstalledGame.newBuilder()
+                                        .setId(null)
+                                        .setPlayerId(args[0].toLong())
+                                        .setGameId(args[1].toLong())
+                                        .setPlatform(org.pops.et4.jvm.project.schemas.models.player.Platform.valueOf(args[2]))
+                                        .setInstalledVersion(args[3])
+                                        .build()
+                                    
+                                    val saved = installedGameRepository.save(installedGame)
+                                    println("[Database] Installed game added: ID=${saved.id}, Player=${args[0]}, Game=${args[1]}, Platform=${args[2]}, Version=${args[3]}")
+                                } catch (e: Exception) {
+                                    System.err.println("[Database] Error: ${e.message}")
+                                }
+                            }
+                        }
+                        "db-update" -> {
+                            println("> Database: Updating installed game version...")
+                            if (args.size < 4) {
+                                System.err.println("Usage: db-update [playerId] [gameId] [platform] [newVersion]")
+                            } else if (args[2] !in VALID_PLATFORMS) {
+                                System.err.println("Error: Invalid platform '${args[2]}'. Valid platforms: ${VALID_PLATFORMS.joinToString(", ")}")
+                            } else {
+                                try {
+                                    val installedGames = installedGameRepository.findAll()
+                                        .filter { it.playerId == args[0].toLong() && it.gameId == args[1].toLong() && it.platform?.toString() == args[2] }
+                                    
+                                    if (installedGames.isNotEmpty()) {
+                                        val installedGame = installedGames.first()
+                                        val updatedGame = org.pops.et4.jvm.project.schemas.models.player.InstalledGame.newBuilder()
+                                            .setId(installedGame.id)
+                                            .setPlayerId(installedGame.playerId)
+                                            .setGameId(installedGame.gameId)
+                                            .setPlatform(installedGame.platform)
+                                            .setInstalledVersion(args[3])
+                                            .build()
+                                        
+                                        val saved = installedGameRepository.save(updatedGame)
+                                        println("[Database] Game updated: ID=${saved.id}, Player=${args[0]}, Game=${args[1]}, Platform=${args[2]}, NewVersion=${args[3]}")
+                                    } else {
+                                        System.err.println("[Database] Game not found in installed games")
+                                    }
+                                } catch (e: Exception) {
+                                    System.err.println("[Database] Error: ${e.message}")
+                                }
+                            }
+                        }
+                        "db-uninstall" -> {
+                            println("> Database: Removing installed game...")
+                            if (args.size < 3) {
+                                System.err.println("Usage: db-uninstall [playerId] [gameId] [platform]")
+                            } else if (args[2] !in VALID_PLATFORMS) {
+                                System.err.println("Error: Invalid platform '${args[2]}'. Valid platforms: ${VALID_PLATFORMS.joinToString(", ")}")
+                            } else {
+                                try {
+                                    val installedGames = installedGameRepository.findAll()
+                                        .filter { it.playerId == args[0].toLong() && it.gameId == args[1].toLong() && it.platform?.toString() == args[2] }
+                                    
+                                    if (installedGames.isNotEmpty()) {
+                                        installedGameRepository.deleteAll(installedGames)
+                                        println("[Database] Uninstalled game: Player=${args[0]}, Game=${args[1]}, Platform=${args[2]}")
+                                    } else {
+                                        System.err.println("[Database] Game not found in installed games")
+                                    }
+                                } catch (e: Exception) {
+                                    System.err.println("[Database] Error: ${e.message}")
+                                }
+                            }
+                        }
                         "get-installed" -> {
                             println("> Get installed games...")
                             installedGameRepository.findAll().forEach { println(it) }
@@ -276,6 +352,9 @@ class App {
         println("* React to Review               react [playerId] [reviewId] [0=NOTHING|1=POSITIVE|2=NEGATIVE]")
         println()
         println("DATABASE COMMANDS:")
+        println("* Add Installed Game            db-install [playerId] [gameId] [platform] [version]")
+        println("* Update Installed Game         db-update [playerId] [gameId] [platform] [newVersion]")
+        println("* Remove Installed Game         db-uninstall [playerId] [gameId] [platform]")
         println("* Get Installed Games           get-installed")
         println()
         print("> ")
