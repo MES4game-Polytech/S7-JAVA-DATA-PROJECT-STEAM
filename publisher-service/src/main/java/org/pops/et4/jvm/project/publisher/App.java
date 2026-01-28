@@ -64,11 +64,22 @@ public class App {
                                 lifecycle.stopListener(listenerId);
                             break;
 
+                        // --- COMMANDES KAFKA PRODUCER ---
+                        case "publish-game":
+                            System.out.println("> Publishing Game event...");
+                            handlePublishGame(producer, args);
+                            break;
+
+                        case "publish-patch":
+                            System.out.println("> Publishing Patch event...");
+                            handlePublishPatch(producer, args);
+                            break;
+
                         case "send":
                             System.out.println("> Sending 'ExampleEvent'...");
                             producer.sendExampleEvent(String.join(" ", args));
                             break;
-
+                        // --- COMMANDES BDD ---
                         case "get-publisher":
                             System.out.println("> Get publishers...");
                             for (Publisher publisher: publisherRepository.findAll())
@@ -123,15 +134,46 @@ public class App {
         };
     }
 
+    private void handlePublishGame(KafkaProducerService producer, String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: publish-game [id]");
+            return;
+        }
+        try {
+            Long id = Long.parseLong(args[0]);
+            producer.sendGamePublished(id);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void handlePublishPatch(KafkaProducerService producer, String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: publish-patch [patchId]");
+            return;
+        }
+        try {
+            Long pId = Long.parseLong(args[0]);
+            producer.sendPatchPublished(pId);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
     private void printMenu() {
         System.out.println();
         System.out.println("=================================");
         System.out.println("        Publisher Service        ");
         System.out.println("=================================");
+        System.out.println("\n[SYSTEM]");
         System.out.println("* Exit                exit/quit");
         System.out.println("* Start Listener      start [listenerId...]");
         System.out.println("* Stop Listener       stop [listenerId...]");
+        System.out.println("\n[KAFKA PRODUCER EVENTS]");
+        System.out.println("* Publish Game        game-published [id]");
+        System.out.println("* Publish Patch       patch-published [patchId]");
         System.out.println("* Send Payload        send [payload]");
+        System.out.println("\n[DATABASE]");
         System.out.println("* Get Publishers      get-publisher");
         System.out.println("* Add Publisher       add-publisher [name] [isCompany]");
         System.out.println("* Remove Publisher    remove-publisher [id/name...]");
