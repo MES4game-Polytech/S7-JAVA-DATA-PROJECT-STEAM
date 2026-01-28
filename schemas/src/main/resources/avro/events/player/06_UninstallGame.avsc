@@ -1,0 +1,29 @@
+{
+    "name": "UninstallGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player uninstalls a game",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player uninstalling the game",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game being uninstalled",
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "Platform from which the game is being uninstalled",
+            "type": "string"
+        },
+        {
+            "name": "comment",
+            "doc": "Optional comment about why uninstalling",
+            "type": ["null", "string"],
+            "default": null
+        }
+    ]
+}

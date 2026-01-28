@@ -1,0 +1,38 @@
+{
+    "name": "ReportCrash",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player's game crashes",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player experiencing the crash",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game that crashed",
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "Platform on which the crash occurred",
+            "type": "string"
+        },
+        {
+            "name": "installedVersion",
+            "doc": "Version of the game when crash occurred",
+            "type": "string"
+        },
+        {
+            "name": "errorCode",
+            "doc": "Error code of the crash",
+            "type": "long"
+        },
+        {
+            "name": "message",
+            "doc": "Error message or description",
+            "type": "string"
+        }
+    ]
+}

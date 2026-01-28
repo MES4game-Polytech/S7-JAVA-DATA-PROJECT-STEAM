@@ -1,0 +1,26 @@
+{
+    "name": "AddPlayTime",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired to track player's game time",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game played",
+            "type": "long"
+        },
+        {
+            "name": "time",
+            "doc": "Time played as duration",
+            "type": {
+                "type": "long",
+                "logicalType": "duration-millis"
+            }
+        }
+    ]
+}

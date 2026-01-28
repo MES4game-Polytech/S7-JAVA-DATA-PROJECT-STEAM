@@ -1,0 +1,23 @@
+{
+    "name": "ReactReview",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player reacts to a review",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player reacting",
+            "type": "long"
+        },
+        {
+            "name": "reviewId",
+            "doc": "ID of the review being reacted to",
+            "type": "long"
+        },
+        {
+            "name": "reactType",
+            "doc": "Type of reaction: 0=NOTHING, 1=POSITIVE, 2=NEGATIVE",
+            "type": "int"
+        }
+    ]
+}

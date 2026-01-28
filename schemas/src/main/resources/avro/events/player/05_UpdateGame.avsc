@@ -1,0 +1,28 @@
+{
+    "name": "UpdateGame",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player updates a game to a new version",
+    "type": "record",
+    "fields": [
+        {
+            "name": "playerId",
+            "doc": "ID of the player updating the game",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game being updated",
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "Platform on which the game is installed",
+            "type": "string"
+        },
+        {
+            "name": "installedVersion",
+            "doc": "New version after update",
+            "type": "string"
+        }
+    ]
+}

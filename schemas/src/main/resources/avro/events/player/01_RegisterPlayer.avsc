@@ -1,0 +1,36 @@
+{
+    "name": "RegisterPlayer",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Event fired when a player registers in the system",
+    "type": "record",
+    "fields": [
+        {
+            "name": "distributorId",
+            "doc": "ID of the distributor platform",
+            "type": "long"
+        },
+        {
+            "name": "pseudo",
+            "doc": "Player's username/pseudo",
+            "type": "string"
+        },
+        {
+            "name": "firstName",
+            "doc": "Player's first name",
+            "type": "string"
+        },
+        {
+            "name": "lastName",
+            "doc": "Player's last name",
+            "type": "string"
+        },
+        {
+            "name": "birthDate",
+            "doc": "Player's birth date as timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        }
+    ]
+}
