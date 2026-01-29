@@ -242,7 +242,7 @@ public class KafkaConsumerService {
         
         // Business logic: Verify player owns game and check if update is needed, then send updated game files
         try {
-            DistributedGame game = distributorService.processUpdateGame(event.getPlayerId(), event.getGameId(), event.getInstalledVersion().toString());
+            DistributedGame game = distributorService.processUpdateGame(event.getPlayerId(), event.getGameId(), event.getInstalledVersion());
             producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion());
         } catch (IllegalStateException e) {
             System.out.println("[Consumer] update-game(" + record.key() + "): REFUSED - " + e.getMessage());

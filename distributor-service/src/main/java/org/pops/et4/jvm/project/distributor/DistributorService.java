@@ -284,10 +284,10 @@ public class DistributorService {
                 .orElseThrow(() -> new RuntimeException("OwnedGame not found for player: " + 
                                                        event.getPlayerId() + " and game: " + event.getGameId()));
 
-        // Update playtime (event.getTime() returns duration in milliseconds, convert to minutes)
-        int additionalMinutes = (int) (event.getTime() / 60000);
+        // Update playtime (event.getTime() is treated as duration in milliseconds, convert to minutes)
+        int additionalPlayTimeMinutes = (int) (event.getTime() / 60000);
         OwnedGame updatedGame = OwnedGame.newBuilder(ownedGame)
-                .setPlayTime(ownedGame.getPlayTime() + additionalMinutes)
+                .setPlayTime(ownedGame.getPlayTime() + additionalPlayTimeMinutes)
                 .build();
 
         return ownedGameRepository.save(updatedGame);
