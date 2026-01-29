@@ -83,12 +83,7 @@ public class DistributorService {
                 .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
 
         // Check if player owns the game and has sufficient playtime (minimum 5 hours = 300 minutes)
-        OwnedGame ownedGame = ownedGameRepository.findAll().stream()
-                .filter(og -> og.getPlayer() != null &&
-                             og.getPlayer().getId() != null &&
-                             og.getPlayer().getId().equals(event.getPlayerId()) &&
-                             og.getGameId() == event.getGameId())
-                .findFirst()
+        OwnedGame ownedGame = ownedGameRepository.findByPlayerIdAndGameId(event.getPlayerId(), event.getGameId())
                 .orElse(null);
 
         if (ownedGame == null || ownedGame.getPlayTime() < 300) {
@@ -145,12 +140,7 @@ public class DistributorService {
                 .orElseThrow(() -> new RuntimeException("Distributor not found: " + event.getDistributorId()));
 
         // Find the DistributedGame by distributor and gameId
-        DistributedGame distributedGame = distributedGameRepository.findAll().stream()
-                .filter(dg -> dg.getDistributor() != null && 
-                             dg.getDistributor().getId() != null &&
-                             dg.getDistributor().getId().equals(event.getDistributorId()) &&
-                             dg.getGameId() == event.getGameId())
-                .findFirst()
+        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(event.getDistributorId(), event.getGameId())
                 .orElseThrow(() -> new RuntimeException("DistributedGame not found for distributor: " + 
                                                        event.getDistributorId() + " and game: " + event.getGameId()));
 
@@ -172,12 +162,7 @@ public class DistributorService {
      */
     public DistributedGame startSale(Long distributorId, Long gameId, Float salePercentage) {
         // Find the DistributedGame by distributor and gameId
-        DistributedGame distributedGame = distributedGameRepository.findAll().stream()
-                .filter(dg -> dg.getDistributor() != null && 
-                             dg.getDistributor().getId() != null &&
-                             dg.getDistributor().getId().equals(distributorId) &&
-                             dg.getGameId() == gameId)
-                .findFirst()
+        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(distributorId, gameId)
                 .orElseThrow(() -> new RuntimeException("DistributedGame not found for distributor: " + 
                                                        distributorId + " and game: " + gameId));
 
@@ -198,26 +183,15 @@ public class DistributorService {
      */
     public DistributedGame processInstallGame(Long playerId, Long gameId) {
         // Verify player owns the game
-        OwnedGame ownedGame = ownedGameRepository.findAll().stream()
-                .filter(og -> og.getPlayer() != null &&
-                             og.getPlayer().getId() != null &&
-                             og.getPlayer().getId().equals(playerId) &&
-                             og.getGameId() == gameId)
-                .findFirst()
+        OwnedGame ownedGame = ownedGameRepository.findByPlayerIdAndGameId(playerId, gameId)
                 .orElseThrow(() -> new IllegalStateException("Player does not own this game"));
 
         // Get the distributed game to retrieve version and distributor info
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found: " + playerId));
         
-        DistributedGame distributedGame = distributedGameRepository.findAll().stream()
-                .filter(dg -> dg.getDistributor() != null &&
-                             dg.getDistributor().getId() != null &&
-                             player.getDistributor() != null &&
-                             player.getDistributor().getId() != null &&
-                             dg.getDistributor().getId().equals(player.getDistributor().getId()) &&
-                             dg.getGameId() == gameId)
-                .findFirst()
+        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(
+                player.getDistributor().getId(), gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found in distributor's catalog"));
 
         return distributedGame;
@@ -233,26 +207,15 @@ public class DistributorService {
      */
     public DistributedGame processUpdateGame(Long playerId, Long gameId, String installedVersion) {
         // Verify player owns the game
-        OwnedGame ownedGame = ownedGameRepository.findAll().stream()
-                .filter(og -> og.getPlayer() != null &&
-                             og.getPlayer().getId() != null &&
-                             og.getPlayer().getId().equals(playerId) &&
-                             og.getGameId() == gameId)
-                .findFirst()
+        OwnedGame ownedGame = ownedGameRepository.findByPlayerIdAndGameId(playerId, gameId)
                 .orElseThrow(() -> new IllegalStateException("Player does not own this game"));
 
         // Get the distributed game to retrieve latest version
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found: " + playerId));
         
-        DistributedGame distributedGame = distributedGameRepository.findAll().stream()
-                .filter(dg -> dg.getDistributor() != null &&
-                             dg.getDistributor().getId() != null &&
-                             player.getDistributor() != null &&
-                             player.getDistributor().getId() != null &&
-                             dg.getDistributor().getId().equals(player.getDistributor().getId()) &&
-                             dg.getGameId() == gameId)
-                .findFirst()
+        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(
+                player.getDistributor().getId(), gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found in distributor's catalog"));
 
         // Check if update is needed
@@ -261,5 +224,162 @@ public class DistributorService {
         }
 
         return distributedGame;
+    }
+
+    /**
+     * Processes a crash report from a player.
+     * Retrieves the distributor ID based on the player who reported the crash.
+     * @param event The ReportCrash event containing crash information
+     * @return The distributor ID to include in the CrashReported event
+     */
+    public Long processCrashReport(org.pops.et4.jvm.project.schemas.events.ReportCrash event) {
+        // Fetch the player to get their distributor
+        Player player = playerRepository.findById(event.getPlayerId())
+                .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
+
+        if (player.getDistributor() == null || player.getDistributor().getId() == null) {
+            throw new RuntimeException("Player has no associated distributor");
+        }
+
+        // Log the crash for tracking
+        System.out.println("[Service] Crash reported for game " + event.getGameId() + 
+                          " on platform " + event.getPlatform() + 
+                          " with error code " + event.getErrorCode());
+
+        return player.getDistributor().getId();
+    }
+
+    /**
+     * Processes a game purchase.
+     * Creates an OwnedGame entry in the database.
+     * @param event The PurchaseGame event containing purchase information
+     * @return The saved OwnedGame entity
+     */
+    public OwnedGame purchaseGame(org.pops.et4.jvm.project.schemas.events.PurchaseGame event) {
+        // Fetch the player entity
+        Player player = playerRepository.findById(event.getPlayerId())
+                .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
+
+        // Create OwnedGame entry
+        OwnedGame ownedGame = OwnedGame.newBuilder()
+                .setId(null)
+                .setPlayer(player)
+                .setGameId(event.getGameId())
+                .setPurchaseDate(Instant.now())
+                .setPlayTime(0)
+                .build();
+
+        return ownedGameRepository.save(ownedGame);
+    }
+
+    /**
+     * Adds playtime to a game that the player owns.
+     * Updates the playTime field in OwnedGame.
+     * @param event The AddPlayTime event containing playtime information
+     * @return The updated OwnedGame entity
+     */
+    public OwnedGame addPlayTime(org.pops.et4.jvm.project.schemas.events.AddPlayTime event) {
+        // Find the OwnedGame entry
+        OwnedGame ownedGame = ownedGameRepository.findByPlayerIdAndGameId(event.getPlayerId(), event.getGameId())
+                .orElseThrow(() -> new RuntimeException("OwnedGame not found for player: " + 
+                                                       event.getPlayerId() + " and game: " + event.getGameId()));
+
+        // Update playtime (event.getTime() returns duration in milliseconds, convert to minutes)
+        int additionalMinutes = (int) (event.getTime() / 60000);
+        OwnedGame updatedGame = OwnedGame.newBuilder(ownedGame)
+                .setPlayTime(ownedGame.getPlayTime() + additionalMinutes)
+                .build();
+
+        return ownedGameRepository.save(updatedGame);
+    }
+
+    /**
+     * Processes a reaction to a review.
+     * Adds or removes player from positive/negative reactions based on reactType.
+     * @param event The ReactReview event containing reaction information
+     * @return The updated Review entity
+     */
+    public Review reactReview(org.pops.et4.jvm.project.schemas.events.ReactReview event) {
+        // Fetch the review
+        Review review = reviewRepository.findById(event.getReviewId())
+                .orElseThrow(() -> new RuntimeException("Review not found: " + event.getReviewId()));
+
+        // Fetch the player
+        Player player = playerRepository.findById(event.getPlayerId())
+                .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
+
+        // Get current reactions lists (create new mutable lists)
+        java.util.List<Player> positiveReactions = new java.util.ArrayList<>(review.getPositiveReactions() != null ? review.getPositiveReactions() : Collections.emptyList());
+        java.util.List<Player> negativeReactions = new java.util.ArrayList<>(review.getNegativeReactions() != null ? review.getNegativeReactions() : Collections.emptyList());
+
+        // Remove player from both lists first
+        positiveReactions.removeIf(p -> p.getId() != null && p.getId().equals(event.getPlayerId()));
+        negativeReactions.removeIf(p -> p.getId() != null && p.getId().equals(event.getPlayerId()));
+
+        // Add to appropriate list based on reactType: 0=NOTHING, 1=POSITIVE, 2=NEGATIVE
+        if (event.getReactType() == 1) {
+            positiveReactions.add(player);
+        } else if (event.getReactType() == 2) {
+            negativeReactions.add(player);
+        }
+        // If reactType == 0, player is removed from both (neutral reaction)
+
+        // Update review
+        Review updatedReview = Review.newBuilder(review)
+                .setPositiveReactions(positiveReactions)
+                .setNegativeReactions(negativeReactions)
+                .build();
+
+        return reviewRepository.save(updatedReview);
+    }
+
+    /**
+     * Adds a game to a player's wishlist.
+     * @param event The AddWishedGame event containing wishlist information
+     * @return The updated Player entity
+     */
+    public Player addWishedGame(org.pops.et4.jvm.project.schemas.events.AddWishedGame event) {
+        // Fetch the player
+        Player player = playerRepository.findById(event.getPlayerId())
+                .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
+
+        // Get current wishlist (create new mutable list)
+        java.util.List<Long> wishedGames = new java.util.ArrayList<>(player.getWishedGames() != null ? player.getWishedGames() : Collections.emptyList());
+
+        // Add game if not already in wishlist
+        if (!wishedGames.contains(event.getGameId())) {
+            wishedGames.add(event.getGameId());
+        }
+
+        // Update player
+        Player updatedPlayer = Player.newBuilder(player)
+                .setWishedGames(wishedGames)
+                .build();
+
+        return playerRepository.save(updatedPlayer);
+    }
+
+    /**
+     * Removes a game from a player's wishlist.
+     * @param event The RemoveWishedGame event containing wishlist information
+     * @return The updated Player entity
+     */
+    public Player removeWishedGame(org.pops.et4.jvm.project.schemas.events.RemoveWishedGame event) {
+        // Fetch the player
+        Player player = playerRepository.findById(event.getPlayerId())
+                .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
+
+        // Get current wishlist (create new mutable list)
+        java.util.List<Long> wishedGames = new java.util.ArrayList<>(player.getWishedGames() != null ? player.getWishedGames() : Collections.emptyList());
+
+        // Remove game from wishlist
+        wishedGames.remove(event.getGameId());
+
+        // Update player
+        Player updatedPlayer = Player.newBuilder(player)
+                .setWishedGames(wishedGames)
+                .build();
+
+        return playerRepository.save(updatedPlayer);
     }
 }

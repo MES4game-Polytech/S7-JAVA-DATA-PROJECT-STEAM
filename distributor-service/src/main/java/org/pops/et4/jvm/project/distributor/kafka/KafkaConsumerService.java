@@ -157,7 +157,8 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("purchaseGameConsumer", Instant.now(), record.key(), record.value()));
         PurchaseGame event = record.value();
         
-        // TODO: Implement business logic - Player wants to purchase a game
+        // Business logic: Create OwnedGame entry when player purchases a game
+        distributorService.purchaseGame(event);
         
         System.out.println("[Consumer] purchase-game(" + record.key() + "): FINISHED");
     }
@@ -200,7 +201,8 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("reactReviewConsumer", Instant.now(), record.key(), record.value()));
         ReactReview event = record.value();
         
-        // TODO: Implement business logic - New reaction on a review by a player
+        // Business logic: Add or remove reaction to a review
+        distributorService.reactReview(event);
         
         System.out.println("[Consumer] react-review(" + record.key() + "): FINISHED");
     }
@@ -260,7 +262,8 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("uninstallGameConsumer", Instant.now(), record.key(), record.value()));
         UninstallGame event = record.value();
         
-        // TODO: Implement business logic - Player wants to uninstall a game
+        // Log the uninstallation event for tracking purposes
+        System.out.println("[Consumer] Player " + event.getPlayerId() + " uninstalled game " + event.getGameId() + " from platform " + event.getPlatform());
         
         System.out.println("[Consumer] uninstall-game(" + record.key() + "): FINISHED");
     }
@@ -276,7 +279,8 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("addPlayTimeConsumer", Instant.now(), record.key(), record.value()));
         AddPlayTime event = record.value();
         
-        // TODO: Implement business logic - Player has more playtime on a game to be added to total
+        // Business logic: Update playtime in OwnedGame
+        distributorService.addPlayTime(event);
         
         System.out.println("[Consumer] add-play-time(" + record.key() + "): FINISHED");
     }
@@ -292,7 +296,21 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("reportCrashConsumer", Instant.now(), record.key(), record.value()));
         ReportCrash event = record.value();
         
-        // TODO: Implement business logic - Player has reported a crash
+        // Business logic: Process crash report and notify via crash-reported event
+        Long distributorId = distributorService.processCrashReport(event);
+        
+        // Convert platform string to Platform enum
+        org.pops.et4.jvm.project.schemas.events.Platform platformEnum = 
+            org.pops.et4.jvm.project.schemas.events.Platform.valueOf(event.getPlatform().toString());
+        
+        producerService.sendCrashReported(
+                distributorId,
+                event.getGameId(),
+                platformEnum,
+                event.getInstalledVersion().toString(),
+                (int) event.getErrorCode(),
+                event.getMessage().toString()
+        );
         
         System.out.println("[Consumer] report-crash(" + record.key() + "): FINISHED");
     }
@@ -308,7 +326,8 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("addWishedGameConsumer", Instant.now(), record.key(), record.value()));
         AddWishedGame event = record.value();
         
-        // TODO: Implement business logic - Player added a game to wishlist
+        // Business logic: Add game to player's wishlist
+        distributorService.addWishedGame(event);
         
         System.out.println("[Consumer] add-wished-game(" + record.key() + "): FINISHED");
     }
@@ -324,7 +343,8 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("removeWishedGameConsumer", Instant.now(), record.key(), record.value()));
         RemoveWishedGame event = record.value();
         
-        // TODO: Implement business logic - Player want to remove a wished game
+        // Business logic: Remove game from player's wishlist
+        distributorService.removeWishedGame(event);
         
         System.out.println("[Consumer] remove-wished-game(" + record.key() + "): FINISHED");
     }
