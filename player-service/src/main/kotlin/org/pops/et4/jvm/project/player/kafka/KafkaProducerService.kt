@@ -298,4 +298,19 @@ class KafkaProducerService(
             println("[Producer] $topic($key): $message")
         }
     }
+
+    fun sendAskPlayerPage(distributorId: Long) {
+        val topic = AskPlayerPage.TOPIC
+        val key = UUID.randomUUID().toString()
+        val event = AskPlayerPage.newBuilder()
+            .setDistributorId(distributorId)
+            .build()
+
+        val future = kafkaTemplate.send(topic, key, event)
+
+        future.whenComplete { result, ex ->
+            val message = ex?.message ?: result
+            println("[Producer] $topic($key): $message")
+        }
+    }
 }

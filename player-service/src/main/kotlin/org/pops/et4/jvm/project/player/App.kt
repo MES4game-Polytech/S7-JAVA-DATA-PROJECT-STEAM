@@ -232,7 +232,16 @@ class App {
                                 }
                             }
                         }
+                        "ask-page" -> {
+                            println("> Requesting Player Page...")
+                            if (args.isEmpty()) {
+                                System.err.println("Usage: ask-page [distributorId]")
+                            } else {
+                                producer.sendAskPlayerPage(args[0].toLong())
+                            }
+                        }
                         
+                        // === DATABASE COMMANDS ===
                         "get-installed" -> {
                             println("> Get installed games...")
                             installedGameRepository.findAll().forEach { println(it) }
@@ -273,6 +282,7 @@ class App {
         println("* Add to Wishlist               wishlist-add [playerId] [gameId]")
         println("* Remove from Wishlist          wishlist-remove [playerId] [gameId]")
         println("* React to Review               react [playerId] [reviewId] [0=NOTHING|1=POSITIVE|2=NEGATIVE]")
+        println("* Ask Player Page               ask-page [distributorId]")
         println()
         println("DATABASE COMMANDS:")
         println("* Get Installed Games           get-installed")

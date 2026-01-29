@@ -1,0 +1,13 @@
+{
+    "name": "AskPlayerPage",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Player requests their profile page from a specific distributor",
+    "type": "record",
+    "fields": [
+        {
+            "name": "distributorId",
+            "doc": "ID of the distributor",
+            "type": "long"
+        }
+    ]
+}
