@@ -1,17 +1,14 @@
 package org.pops.et4.jvm.project.publisher.kafka;
 
 import org.pops.et4.jvm.project.schemas.events.ExampleEvent;
-import org.pops.et4.jvm.project.schemas.events.*;
-import org.pops.et4.jvm.project.schemas.models.publisher.Genre;
-import org.pops.et4.jvm.project.schemas.models.publisher.LogTag;
-import org.pops.et4.jvm.project.schemas.models.publisher.Platform;
+import org.pops.et4.jvm.project.schemas.events.GamePublished;
+import org.pops.et4.jvm.project.schemas.events.PatchPublished;
 import org.pops.et4.jvm.project.schemas.repositories.publisher.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
