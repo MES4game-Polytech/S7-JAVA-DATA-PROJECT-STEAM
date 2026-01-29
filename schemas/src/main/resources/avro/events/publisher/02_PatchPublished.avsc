@@ -1,14 +1,14 @@
 {
-  "namespace": "org.pops.et4.jvm.project.schemas.events.publisher",
-  "type": "record",
   "name": "PatchPublished",
+  "namespace": "org.pops.et4.jvm.project.schemas.events",
   "doc": "Event emitted when a patch is published",
+  "type": "record",
   "fields": [
     {
       "name": "patchId",
+      "doc": "ID of the patch",
       "type": "long",
-      "default": 0,
-      "doc": "ID of the patch"
+      "default": 0
     }
   ]
 }

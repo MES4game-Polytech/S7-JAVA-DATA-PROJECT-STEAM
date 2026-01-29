@@ -1,7 +1,7 @@
 package org.pops.et4.jvm.project.publisher.kafka;
 
 import org.pops.et4.jvm.project.schemas.events.ExampleEvent;
-import org.pops.et4.jvm.project.schemas.events.publisher.*;
+import org.pops.et4.jvm.project.schemas.events.*;
 import org.pops.et4.jvm.project.schemas.models.publisher.Genre;
 import org.pops.et4.jvm.project.schemas.models.publisher.LogTag;
 import org.pops.et4.jvm.project.schemas.models.publisher.Platform;
