@@ -53,11 +53,13 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendGamePublished(long gameId){
+    public void sendGamePublished(long gameId, String gameName, String version){
         String topic = GamePublished.TOPIC;
         String key = UUID.randomUUID().toString();
         GamePublished event = GamePublished.newBuilder()
                 .setGameId(gameId)
+                .setGameName(gameName)
+                .setVersion(version)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
@@ -66,11 +68,12 @@ public class KafkaProducerService {
                 System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendPatchPublished(Long patchId){
+    public void sendPatchPublished(long gameId, String version){
         String topic = PatchPublished.TOPIC;
         String key = UUID.randomUUID().toString();
         PatchPublished event = PatchPublished.newBuilder()
-                .setPatchId(patchId)
+                .setGameId(gameId)
+                .setVersion(version)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);

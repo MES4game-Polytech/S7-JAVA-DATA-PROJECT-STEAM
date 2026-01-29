@@ -5,10 +5,16 @@
   "type": "record",
   "fields": [
     {
-      "name": "patchId",
-      "doc": "ID of the patch",
+      "name": "gameId",
+      "doc": "ID of the game concern by the patch",
       "type": "long",
       "default": 0
+    },
+    {
+      "name": "version",
+      "doc": "New version of the game",
+      "type": "string",
+      "default": "1.0.0"
     }
   ]
 }
