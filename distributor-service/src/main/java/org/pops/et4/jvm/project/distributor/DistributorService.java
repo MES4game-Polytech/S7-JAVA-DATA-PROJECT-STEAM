@@ -4,16 +4,19 @@ import org.pops.et4.jvm.project.schemas.events.RegisterPlayer;
 import org.pops.et4.jvm.project.schemas.events.ReviewGame;
 import org.pops.et4.jvm.project.schemas.events.GamePublished;
 import org.pops.et4.jvm.project.schemas.events.PatchPublished;
+import org.pops.et4.jvm.project.schemas.events.*;
 import org.pops.et4.jvm.project.schemas.models.distributor.Distributor;
 import org.pops.et4.jvm.project.schemas.models.distributor.DistributedGame;
 import org.pops.et4.jvm.project.schemas.models.distributor.OwnedGame;
 import org.pops.et4.jvm.project.schemas.models.distributor.Player;
 import org.pops.et4.jvm.project.schemas.models.distributor.Review;
+import org.pops.et4.jvm.project.schemas.models.publisher.Game;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.DistributedGameRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.DistributorRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.OwnedGameRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.PlayerRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.ReviewRepository;
+import org.pops.et4.jvm.project.schemas.repositories.publisher.GameRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class DistributorService {
     private final ReviewRepository reviewRepository;
     private final DistributedGameRepository distributedGameRepository;
     private final OwnedGameRepository ownedGameRepository;
+    private final GameRepository gameRepository;
 
     @Autowired
     public DistributorService(
@@ -38,13 +42,15 @@ public class DistributorService {
             @Qualifier(DistributorRepository.BEAN_NAME) DistributorRepository distributorRepository,
             @Qualifier(ReviewRepository.BEAN_NAME) ReviewRepository reviewRepository,
             @Qualifier(DistributedGameRepository.BEAN_NAME) DistributedGameRepository distributedGameRepository,
-            @Qualifier(OwnedGameRepository.BEAN_NAME) OwnedGameRepository ownedGameRepository
+            @Qualifier(OwnedGameRepository.BEAN_NAME) OwnedGameRepository ownedGameRepository,
+            @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository
     ) {
         this.playerRepository = playerRepository;
         this.distributorRepository = distributorRepository;
         this.reviewRepository = reviewRepository;
         this.distributedGameRepository = distributedGameRepository;
         this.ownedGameRepository = ownedGameRepository;
+        this.gameRepository = gameRepository;
     }
 
     /**
@@ -112,16 +118,21 @@ public class DistributorService {
      * @return The saved DistributedGame entity with its generated ID
      */
     public DistributedGame gamePublished(GamePublished event) {
-        // Fetch the distributor entity
-        Distributor distributor = distributorRepository.findById(event.getDistributorId())
-                .orElseThrow(() -> new RuntimeException("Distributor not found: " + event.getDistributorId()));
+        // Fetch the current distributor (the one running this service)
+        Distributor distributor = distributorRepository.findAll().stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No distributor found in database"));
+
+        // Fetch the game from publisher database to get version and price
+        Game publisherGame = gameRepository.findById(event.getGameId())
+                .orElseThrow(() -> new RuntimeException("Game not found in publisher database: " + event.getGameId()));
 
         DistributedGame distributedGame = DistributedGame.newBuilder()
                 .setId(null)
                 .setDistributor(distributor)
                 .setGameId(event.getGameId())
-                .setVersion(event.getVersion())
-                .setPrice(event.getPrice())
+                .setVersion(publisherGame.getVersion())
+                .setPrice(59.99f) // Default price set by distributor
                 .setSale(null)
                 .build();
 
@@ -135,18 +146,19 @@ public class DistributorService {
      * @return The updated DistributedGame entity
      */
     public DistributedGame patchPublished(PatchPublished event) {
-        // Fetch the distributor entity
-        Distributor distributor = distributorRepository.findById(event.getDistributorId())
-                .orElseThrow(() -> new RuntimeException("Distributor not found: " + event.getDistributorId()));
+        // Fetch the current distributor (the one running this service)
+        Distributor distributor = distributorRepository.findAll().stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No distributor found in database"));
 
         // Find the DistributedGame by distributor and gameId
-        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(event.getDistributorId(), event.getGameId())
+        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(distributor.getId(), event.getGameId())
                 .orElseThrow(() -> new RuntimeException("DistributedGame not found for distributor: " + 
-                                                       event.getDistributorId() + " and game: " + event.getGameId()));
+                                                       distributor.getId() + " and game: " + event.getGameId()));
 
         // Update the version
         DistributedGame updatedGame = DistributedGame.newBuilder(distributedGame)
-                .setVersion(event.getNewVersion())
+                .setVersion(event.getVersion())
                 .build();
 
         return distributedGameRepository.save(updatedGame);

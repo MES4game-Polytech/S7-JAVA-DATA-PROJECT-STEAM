@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.pops.et4.jvm.project.distributor.DistributorService;
 import org.pops.et4.jvm.project.distributor.db.DistributorDbConfig;
 import org.pops.et4.jvm.project.schemas.events.*;
+import org.pops.et4.jvm.project.schemas.models.distributor.DistributedGame;
 import org.pops.et4.jvm.project.schemas.models.distributor.Review;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,8 +106,8 @@ public class KafkaConsumerService {
         GamePublished event = record.value();
         
         // Business logic: Create DistributedGame and send game-distributed event
-        distributorService.gamePublished(event);
-        producerService.sendGameDistributed(event.getDistributorId(), event.getGameId());
+        var distributedGame = distributorService.gamePublished(event);
+        producerService.sendGameDistributed(distributedGame.getDistributor().getId(), event.getGameId());
         
         System.out.println("[Consumer] game-published(" + record.key() + "): FINISHED");
     }
@@ -123,8 +124,8 @@ public class KafkaConsumerService {
         PatchPublished event = record.value();
         
         // Business logic: Update DistributedGame version and send patch-distributed event
-        distributorService.patchPublished(event);
-        producerService.sendPatchDistributed(event.getDistributorId(), event.getGameId(), event.getNewVersion());
+        var distributedGame = distributorService.patchPublished(event);
+        producerService.sendPatchDistributed(distributedGame.getDistributor().getId(), event.getGameId(), event.getVersion());
         
         System.out.println("[Consumer] patch-published(" + record.key() + "): FINISHED");
     }
@@ -242,7 +243,7 @@ public class KafkaConsumerService {
         
         // Business logic: Verify player owns game and check if update is needed, then send updated game files
         try {
-            DistributedGame game = distributorService.processUpdateGame(event.getPlayerId(), event.getGameId(), event.getInstalledVersion());
+            DistributedGame game = distributorService.processUpdateGame(event.getPlayerId(), event.getGameId(), event.getInstalledVersion().toString());
             producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion());
         } catch (IllegalStateException e) {
             System.out.println("[Consumer] update-game(" + record.key() + "): REFUSED - " + e.getMessage());
