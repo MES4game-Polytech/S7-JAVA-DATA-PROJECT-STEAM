@@ -128,7 +128,8 @@ public class App {
                                 Long gId = Long.parseLong(args[1]);
                                 Float salePerc = Float.parseFloat(args[2]);
                                 distributorService.startSale(distId, gId, salePerc);
-                                producer.sendSaleStarted(distId, gId, salePerc);
+                                String gameName = distributorService.getGameName(gId);
+                                producer.sendSaleStarted(distId, gId, salePerc, gameName);
                                 System.out.println("Sale started: " + salePerc * 100 + "% off on game " + gId);
                             } catch (NumberFormatException e) {
                                 System.err.println("Invalid number format");

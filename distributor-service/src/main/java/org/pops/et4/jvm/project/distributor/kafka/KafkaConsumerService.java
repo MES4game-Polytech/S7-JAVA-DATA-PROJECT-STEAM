@@ -107,7 +107,8 @@ public class KafkaConsumerService {
         
         // Business logic: Create DistributedGame and send game-distributed event
         var distributedGame = distributorService.gamePublished(event);
-        producerService.sendGameDistributed(distributedGame.getDistributor().getId(), event.getGameId());
+        String gameName = distributorService.getGameName(event.getGameId());
+        producerService.sendGameDistributed(distributedGame.getDistributor().getId(), event.getGameId(), gameName);
         
         System.out.println("[Consumer] game-published(" + record.key() + "): FINISHED");
     }
@@ -125,7 +126,8 @@ public class KafkaConsumerService {
         
         // Business logic: Update DistributedGame version and send patch-distributed event
         var distributedGame = distributorService.patchPublished(event);
-        producerService.sendPatchDistributed(distributedGame.getDistributor().getId(), event.getGameId(), event.getVersion());
+        String gameName = distributorService.getGameName(event.getGameId());
+        producerService.sendPatchDistributed(distributedGame.getDistributor().getId(), event.getGameId(), event.getVersion(), gameName);
         
         System.out.println("[Consumer] patch-published(" + record.key() + "): FINISHED");
     }
@@ -184,7 +186,9 @@ public class KafkaConsumerService {
             // Review refused - send ReviewRefused event
             // We need to create a review with ID first to get the reviewId
             // Or we can send a mock ID, depending on the use case
-            producerService.sendReviewRefused(0L); // Using 0 as placeholder since review wasn't created
+            String playerName = distributorService.getPlayerName(event.getPlayerId());
+            String gameName = distributorService.getGameName(event.getGameId());
+            producerService.sendReviewRefused(0L, playerName, gameName); // Using 0 as placeholder since review wasn't created
             System.out.println("[Consumer] review-game(" + record.key() + "): REFUSED - " + e.getMessage());
         }
         
@@ -222,7 +226,10 @@ public class KafkaConsumerService {
         // Business logic: Verify player owns game, then send game files
         try {
             DistributedGame game = distributorService.processInstallGame(event.getPlayerId(), event.getGameId());
-            producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion());
+            String gameName = distributorService.getGameName(event.getGameId());
+            String playerName = distributorService.getPlayerName(event.getPlayerId());
+            String platform = event.getPlatform().toString();
+            producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion(), gameName, platform, playerName);
         } catch (IllegalStateException e) {
             System.out.println("[Consumer] install-game(" + record.key() + "): REFUSED - " + e.getMessage());
         }
@@ -244,7 +251,10 @@ public class KafkaConsumerService {
         // Business logic: Verify player owns game and check if update is needed, then send updated game files
         try {
             DistributedGame game = distributorService.processUpdateGame(event.getPlayerId(), event.getGameId(), event.getInstalledVersion().toString());
-            producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion());
+            String gameName = distributorService.getGameName(event.getGameId());
+            String playerName = distributorService.getPlayerName(event.getPlayerId());
+            String platform = event.getPlatform().toString();
+            producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion(), gameName, platform, playerName);
         } catch (IllegalStateException e) {
             System.out.println("[Consumer] update-game(" + record.key() + "): REFUSED - " + e.getMessage());
         }

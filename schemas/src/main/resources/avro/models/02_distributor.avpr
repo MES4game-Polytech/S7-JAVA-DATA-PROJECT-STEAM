@@ -84,6 +84,14 @@
                     "type": "long"
                 },
                 {
+                    "name": "gameName",
+                    "doc": "Name of the game",
+                    "javaAnnotation": [
+                        "jakarta.persistence.Column(name = \"game_name\", unique = false, nullable = false)"
+                    ],
+                    "type": "string"
+                },
+                {
                     "name": "version",
                     "doc": "TODO",
                     "javaAnnotation": [

@@ -51,12 +51,13 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendGameDistributed(Long distributorId, Long gameId) {
+    public void sendGameDistributed(Long distributorId, Long gameId, String gameName) {
         String topic = "game-distributed";
         String key = UUID.randomUUID().toString();
         GameDistributed event = GameDistributed.newBuilder()
                 .setDistributorId(distributorId)
                 .setGameId(gameId)
+                .setGameName(gameName)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
@@ -64,13 +65,14 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendPatchDistributed(Long distributorId, Long gameId, String newVersion) {
+    public void sendPatchDistributed(Long distributorId, Long gameId, String newVersion, String gameName) {
         String topic = "patch-distributed";
         String key = UUID.randomUUID().toString();
         PatchDistributed event = PatchDistributed.newBuilder()
                 .setDistributorId(distributorId)
                 .setGameId(gameId)
                 .setNewVersion(newVersion)
+                .setGameName(gameName)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
@@ -78,13 +80,14 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendSaleStarted(Long distributorId, Long gameId, Float salePercentage) {
+    public void sendSaleStarted(Long distributorId, Long gameId, Float salePercentage, String gameName) {
         String topic = "sale-started";
         String key = UUID.randomUUID().toString();
         SaleStarted event = SaleStarted.newBuilder()
                 .setDistributorId(distributorId)
                 .setGameId(gameId)
                 .setSalePercentage(salePercentage)
+                .setGameName(gameName)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
@@ -92,13 +95,16 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendSendGameFile(Long targetId, Long gameId, String version) {
+    public void sendSendGameFile(Long targetId, Long gameId, String version, String gameName, String platform, String playerName) {
         String topic = "send-game-file";
         String key = UUID.randomUUID().toString();
         SendGameFile event = SendGameFile.newBuilder()
                 .setTargetId(targetId)
                 .setGameId(gameId)
                 .setVersion(version)
+                .setGameName(gameName)
+                .setPlatform(platform)
+                .setPlayerName(playerName)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
@@ -118,11 +124,13 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendReviewRefused(Long reviewId) {
+    public void sendReviewRefused(Long reviewId, String playerName, String gameName) {
         String topic = "review-refused";
         String key = UUID.randomUUID().toString();
         ReviewRefused event = ReviewRefused.newBuilder()
                 .setReviewId(reviewId)
+                .setPlayerName(playerName)
+                .setGameName(gameName)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);

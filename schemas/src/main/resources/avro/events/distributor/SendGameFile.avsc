@@ -18,6 +18,21 @@
             "name": "version",
             "doc": "Version of the game file",
             "type": "string"
+        },
+        {
+            "name": "gameName",
+            "doc": "Name of the game",
+            "type": "string"
+        },
+        {
+            "name": "platform",
+            "doc": "Platform for the game file",
+            "type": "string"
+        },
+        {
+            "name": "playerName",
+            "doc": "Name of the player",
+            "type": "string"
         }
     ]
 }

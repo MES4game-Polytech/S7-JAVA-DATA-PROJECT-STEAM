@@ -13,6 +13,11 @@
             "name": "gameId",
             "doc": "ID of the game",
             "type": "long"
+        },
+        {
+            "name": "gameName",
+            "doc": "Name of the game",
+            "type": "string"
         }
     ]
 }

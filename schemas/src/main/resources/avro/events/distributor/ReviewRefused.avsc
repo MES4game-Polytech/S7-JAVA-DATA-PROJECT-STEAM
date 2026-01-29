@@ -8,6 +8,16 @@
             "name": "reviewId",
             "doc": "ID of the refused review",
             "type": "long"
+        },
+        {
+            "name": "playerName",
+            "doc": "Name of the player who submitted the review",
+            "type": "string"
+        },
+        {
+            "name": "gameName",
+            "doc": "Name of the game",
+            "type": "string"
         }
     ]
 }

@@ -18,6 +18,11 @@
             "name": "newVersion",
             "doc": "New version of the patch",
             "type": "string"
+        },
+        {
+            "name": "gameName",
+            "doc": "Name of the game",
+            "type": "string"
         }
     ]
 }

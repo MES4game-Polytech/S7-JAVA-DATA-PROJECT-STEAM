@@ -18,6 +18,11 @@
             "name": "salePercentage",
             "doc": "Sale percentage (0-1, e.g., 0.2 for 20% off)",
             "type": "float"
+        },
+        {
+            "name": "gameName",
+            "doc": "Name of the game",
+            "type": "string"
         }
     ]
 }

@@ -10,13 +10,11 @@ import org.pops.et4.jvm.project.schemas.models.distributor.DistributedGame;
 import org.pops.et4.jvm.project.schemas.models.distributor.OwnedGame;
 import org.pops.et4.jvm.project.schemas.models.distributor.Player;
 import org.pops.et4.jvm.project.schemas.models.distributor.Review;
-import org.pops.et4.jvm.project.schemas.models.publisher.Game;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.DistributedGameRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.DistributorRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.OwnedGameRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.PlayerRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.ReviewRepository;
-import org.pops.et4.jvm.project.schemas.repositories.publisher.GameRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -34,7 +32,6 @@ public class DistributorService {
     private final ReviewRepository reviewRepository;
     private final DistributedGameRepository distributedGameRepository;
     private final OwnedGameRepository ownedGameRepository;
-    private final GameRepository gameRepository;
 
     @Autowired
     public DistributorService(
@@ -42,15 +39,13 @@ public class DistributorService {
             @Qualifier(DistributorRepository.BEAN_NAME) DistributorRepository distributorRepository,
             @Qualifier(ReviewRepository.BEAN_NAME) ReviewRepository reviewRepository,
             @Qualifier(DistributedGameRepository.BEAN_NAME) DistributedGameRepository distributedGameRepository,
-            @Qualifier(OwnedGameRepository.BEAN_NAME) OwnedGameRepository ownedGameRepository,
-            @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository
+            @Qualifier(OwnedGameRepository.BEAN_NAME) OwnedGameRepository ownedGameRepository
     ) {
         this.playerRepository = playerRepository;
         this.distributorRepository = distributorRepository;
         this.reviewRepository = reviewRepository;
         this.distributedGameRepository = distributedGameRepository;
         this.ownedGameRepository = ownedGameRepository;
-        this.gameRepository = gameRepository;
     }
 
     /**
@@ -123,15 +118,12 @@ public class DistributorService {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No distributor found in database"));
 
-        // Fetch the game from publisher database to get version and price
-        Game publisherGame = gameRepository.findById(event.getGameId())
-                .orElseThrow(() -> new RuntimeException("Game not found in publisher database: " + event.getGameId()));
-
         DistributedGame distributedGame = DistributedGame.newBuilder()
                 .setId(null)
                 .setDistributor(distributor)
                 .setGameId(event.getGameId())
-                .setVersion(publisherGame.getVersion())
+                .setGameName(event.getGameName())
+                .setVersion(event.getVersion())
                 .setPrice(59.99f) // Default price set by distributor
                 .setSale(null)
                 .build();
@@ -393,5 +385,32 @@ public class DistributorService {
                 .build();
 
         return playerRepository.save(updatedPlayer);
+    }
+
+    /**
+     * Retrieves the player name (pseudo) from the distributor database.
+     * @param playerId ID of the player
+     * @return The player pseudo
+     */
+    public String getPlayerName(Long playerId) {
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new RuntimeException("Player not found: " + playerId));
+        return player.getPseudo();
+    }
+
+    /**
+     * Retrieves the game name from the distributed games database.
+     * @param gameId ID of the game
+     * @return The game name
+     */
+    public String getGameName(Long gameId) {
+        // Get the current distributor
+        Distributor distributor = distributorRepository.findAll().stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No distributor found in database"));
+        
+        DistributedGame game = distributedGameRepository.findByDistributorIdAndGameId(distributor.getId(), gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found in distributor catalog: " + gameId));
+        return game.getGameName();
     }
 }
