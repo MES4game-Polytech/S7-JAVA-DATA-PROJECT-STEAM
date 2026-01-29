@@ -1,0 +1,23 @@
+{
+    "name": "PatchDistributed",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "New patch distributed by a publisher, requires minimum version",
+    "type": "record",
+    "fields": [
+        {
+            "name": "distributorId",
+            "doc": "ID of the distributor",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game",
+            "type": "long"
+        },
+        {
+            "name": "newVersion",
+            "doc": "New version of the patch",
+            "type": "string"
+        }
+    ]
+}

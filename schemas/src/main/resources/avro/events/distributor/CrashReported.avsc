@@ -1,0 +1,42 @@
+{
+    "name": "CrashReported",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Sends a crash reported by player",
+    "type": "record",
+    "fields": [
+        {
+            "name": "distributorId",
+            "doc": "ID of the distributor",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game",
+            "type": "long"
+        },
+        {
+            "name": "platform",
+            "doc": "Platform where the crash occurred",
+            "type": {
+                "type": "enum",
+                "name": "Platform",
+                "symbols": ["WINDOWS", "MACOS", "LINUX", "PS5", "PS4", "XBOX_SERIES", "XBOX_ONE", "SWITCH2", "SWITCH"]
+            }
+        },
+        {
+            "name": "installedVersion",
+            "doc": "Version installed when the crash occurred",
+            "type": "string"
+        },
+        {
+            "name": "errorCode",
+            "doc": "Error code of the crash",
+            "type": "int"
+        },
+        {
+            "name": "message",
+            "doc": "Crash message",
+            "type": "string"
+        }
+    ]
+}

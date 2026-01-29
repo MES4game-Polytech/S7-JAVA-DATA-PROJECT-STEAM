@@ -1,6 +1,6 @@
 package org.pops.et4.jvm.project.distributor.kafka;
 
-import org.pops.et4.jvm.project.schemas.events.ExampleEvent;
+import org.pops.et4.jvm.project.schemas.events.*;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,6 +44,102 @@ public class KafkaProducerService {
         String key = UUID.randomUUID().toString();
         ExampleEvent event = ExampleEvent.newBuilder()
                 .setPayload(payload)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendGameDistributed(Long distributorId, Long gameId) {
+        String topic = "game-distributed";
+        String key = UUID.randomUUID().toString();
+        GameDistributed event = GameDistributed.newBuilder()
+                .setDistributorId(distributorId)
+                .setGameId(gameId)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendPatchDistributed(Long distributorId, Long gameId, String newVersion) {
+        String topic = "patch-distributed";
+        String key = UUID.randomUUID().toString();
+        PatchDistributed event = PatchDistributed.newBuilder()
+                .setDistributorId(distributorId)
+                .setGameId(gameId)
+                .setNewVersion(newVersion)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendSaleStarted(Long distributorId, Long gameId, Float salePercentage) {
+        String topic = "sale-started";
+        String key = UUID.randomUUID().toString();
+        SaleStarted event = SaleStarted.newBuilder()
+                .setDistributorId(distributorId)
+                .setGameId(gameId)
+                .setSalePercentage(salePercentage)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendSendGameFile(Long targetId, Long gameId, String version) {
+        String topic = "send-game-file";
+        String key = UUID.randomUUID().toString();
+        SendGameFile event = SendGameFile.newBuilder()
+                .setTargetId(targetId)
+                .setGameId(gameId)
+                .setVersion(version)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendGameReviewed(Long reviewId) {
+        String topic = "game-reviewed";
+        String key = UUID.randomUUID().toString();
+        GameReviewed event = GameReviewed.newBuilder()
+                .setReviewId(reviewId)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendReviewRefused(Long reviewId) {
+        String topic = "review-refused";
+        String key = UUID.randomUUID().toString();
+        ReviewRefused event = ReviewRefused.newBuilder()
+                .setReviewId(reviewId)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendCrashReported(Long distributorId, Long gameId, Platform platform, String installedVersion, Integer errorCode, String message) {
+        String topic = "crash-reported";
+        String key = UUID.randomUUID().toString();
+        CrashReported event = CrashReported.newBuilder()
+                .setDistributorId(distributorId)
+                .setGameId(gameId)
+                .setPlatform(platform)
+                .setInstalledVersion(installedVersion)
+                .setErrorCode(errorCode)
+                .setMessage(message)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);

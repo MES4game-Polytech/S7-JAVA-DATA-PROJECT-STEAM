@@ -1,0 +1,13 @@
+{
+    "name": "ReviewRefused",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Review submitted by the player has been refused",
+    "type": "record",
+    "fields": [
+        {
+            "name": "reviewId",
+            "doc": "ID of the refused review",
+            "type": "long"
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "name": "SendGameFile",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Sending game files in a specific version to the player (update, patch, DLC, game)",
+    "type": "record",
+    "fields": [
+        {
+            "name": "targetId",
+            "doc": "ID of the target player",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game",
+            "type": "long"
+        },
+        {
+            "name": "version",
+            "doc": "Version of the game file",
+            "type": "string"
+        }
+    ]
+}

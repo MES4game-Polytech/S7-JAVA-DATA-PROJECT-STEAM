@@ -1,0 +1,13 @@
+{
+    "name": "GameReviewed",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "New review for the publisher",
+    "type": "record",
+    "fields": [
+        {
+            "name": "reviewId",
+            "doc": "ID of the review",
+            "type": "long"
+        }
+    ]
+}

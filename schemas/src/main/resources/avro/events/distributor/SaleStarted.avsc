@@ -1,0 +1,23 @@
+{
+    "name": "SaleStarted",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "New Sale on a game",
+    "type": "record",
+    "fields": [
+        {
+            "name": "distributorId",
+            "doc": "ID of the distributor",
+            "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game",
+            "type": "long"
+        },
+        {
+            "name": "salePercentage",
+            "doc": "Sale percentage (0-1, e.g., 0.2 for 20% off)",
+            "type": "float"
+        }
+    ]
+}
