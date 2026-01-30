@@ -84,6 +84,19 @@ public class App {
                                 lifecycle.stopListener(listenerId);
                             break;
 
+                        case "list-games":
+                            System.out.println("> Listing games from database...");
+                            List<Game> games = gameRepository.findAll();
+
+                            if (games.isEmpty()) {
+                                System.out.println("No games found in database.");
+                            } else {
+                                for (Game game : games) {
+                                    System.out.println(formatGame(game));
+                                }
+                            }
+                            break;
+
                         // --- COMMANDES KAFKA PRODUCER ---
                         case "publish-game":
                             System.out.println("> Publishing Game event...");
@@ -273,6 +286,18 @@ public class App {
         }
     }
 
+    private String formatGame(Game game) {
+        return String.format(
+                "Game[id=%d, name='%s', version=%s, publisher=%s, platforms=%s, genres=%s]",
+                game.getId(),
+                game.getName(),
+                game.getVersion(),
+                game.getPublisher() != null ? game.getPublisher().getName() : "N/A",
+                game.getPlatforms(),
+                game.getGenres()
+        );
+    }
+
     private void handlePublishGame(KafkaProducerService producer, GameRepository gameRepo, String[] args) {
         if (args.length < 1) {
             System.out.println("Usage: publish-game [gameId]");
@@ -313,9 +338,11 @@ public class App {
         System.out.println("=================================");
         System.out.println("\n[SYSTEM]");
         System.out.println("* Exit                exit/quit");
+        System.out.println("* Load Game DataBase  load-csv [number of lines]");
         System.out.println("\n[KAFKA CONSUMER EVENTS]");
         System.out.println("* Start Listener      start [listenerId...]");
         System.out.println("* Stop Listener       stop [listenerId...]");
+        System.out.println("* List Games          list-games");
         System.out.println("  -> IDs: " + KafkaConsumerService.EXAMPLE_EVENT_CONSUMER_BEAN_NAME);
         System.out.println("  -> " + KafkaConsumerService.GAME_REVIEWED_CONSUMER_BEAN_NAME);
         System.out.println("  -> " + KafkaConsumerService.CRASH_REPORTED_CONSUMER_BEAN_NAME);

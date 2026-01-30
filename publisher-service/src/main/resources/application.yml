@@ -2,7 +2,7 @@ shared-config:
   port: 8082
   name: publisher-service
   db:
-    base-url: jdbc:postgresql://localhost:5432 #5432 normalement
+    base-url: jdbc:postgresql://localhost:5432
     username: postgres
     password: root
     driver: org.postgresql.Driver
