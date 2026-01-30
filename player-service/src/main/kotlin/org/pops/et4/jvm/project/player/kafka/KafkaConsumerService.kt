@@ -28,6 +28,8 @@ class KafkaConsumerService(
         const val SEND_GAME_FILE_CONSUMER_BEAN_NAME = "playerServiceSendGameFileConsumer"
         const val REVIEW_REFUSED_CONSUMER_BEAN_NAME = "playerServiceReviewRefusedConsumer"
         const val SEND_PLAYER_PAGE_CONSUMER_BEAN_NAME = "playerServiceSendPlayerPageConsumer"
+        const val SEND_GAMES_PAGE_CONSUMER_BEAN_NAME = "playerServiceSendGamesPageConsumer"
+        const val SEND_GAME_REVIEWS_CONSUMER_BEAN_NAME = "playerServiceSendGameReviewsConsumer"
     }
 
     private val _logs = ArrayList<ConsumeLog<out KafkaEvent>>()
@@ -257,5 +259,69 @@ class KafkaConsumerService(
         println(event.getPage())
         println("=".repeat(80))
         println("[Consumer] ${SendPlayerPage.TOPIC}(${record.key()}): FINISHED")
+    }
+
+    /**
+     * Consumer for SendGamesPage event
+     * Triggered when the distributor sends a page of available games
+     * Displays the formatted games page content
+     */
+    @KafkaListener(
+        id = SEND_GAMES_PAGE_CONSUMER_BEAN_NAME,
+        containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
+        topics = [SendGamesPage.TOPIC],
+        groupId = "\${spring.kafka.consumer.group-id}",
+        autoStartup = "false"
+    )
+    @Transactional(transactionManager = PlayerDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
+    fun consumeSendGamesPage(record: ConsumerRecord<String, SendGamesPage>) {
+        _logs.add(
+            ConsumeLog(
+                SEND_GAMES_PAGE_CONSUMER_BEAN_NAME,
+                Instant.now(),
+                record.key(),
+                record.value()
+            )
+        )
+
+        val event = record.value()
+        
+        println("[Consumer] ${SendGamesPage.TOPIC}(${record.key()}): Received games page:")
+        println("=".repeat(80))
+        println(event.getPage())
+        println("=".repeat(80))
+        println("[Consumer] ${SendGamesPage.TOPIC}(${record.key()}): FINISHED")
+    }
+
+    /**
+     * Consumer for SendGameReviews event
+     * Triggered when the distributor sends reviews for a specific game
+     * Displays the formatted game reviews content
+     */
+    @KafkaListener(
+        id = SEND_GAME_REVIEWS_CONSUMER_BEAN_NAME,
+        containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
+        topics = [SendGameReviews.TOPIC],
+        groupId = "\${spring.kafka.consumer.group-id}",
+        autoStartup = "false"
+    )
+    @Transactional(transactionManager = PlayerDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
+    fun consumeSendGameReviews(record: ConsumerRecord<String, SendGameReviews>) {
+        _logs.add(
+            ConsumeLog(
+                SEND_GAME_REVIEWS_CONSUMER_BEAN_NAME,
+                Instant.now(),
+                record.key(),
+                record.value()
+            )
+        )
+
+        val event = record.value()
+        
+        println("[Consumer] ${SendGameReviews.TOPIC}(${record.key()}): Received game reviews:")
+        println("=".repeat(80))
+        println(event.getPage())
+        println("=".repeat(80))
+        println("[Consumer] ${SendGameReviews.TOPIC}(${record.key()}): FINISHED")
     }
 }
