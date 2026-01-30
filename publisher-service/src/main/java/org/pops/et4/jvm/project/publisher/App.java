@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SpringBootApplication
 public class App {
@@ -64,7 +65,11 @@ public class App {
 
                         case "load-csv":
                             System.out.println("Loading Data in DB...");
-                            this.handleCsvImport(publisherRepository, gameRepository);
+                            if (args.length < 1) {
+                                System.err.println("Too few arguments, required: 1");
+                                break;
+                            }
+                            this.handleCsvImport(publisherRepository, gameRepository, Long.parseLong(args[0]));
                             break;
 
                         case "start":
@@ -149,10 +154,10 @@ public class App {
         };
     }
 
-    private static final String CSV_FILENAME = "mon_fichier_donnees.csv";
+    private static final String CSV_FILENAME = "vgsales.csv";
 
     @Transactional
-    public void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo) {
+    public void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo, long max_line) {
 
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(App.CSV_FILENAME);
 
@@ -161,11 +166,12 @@ public class App {
         }
 
         try (var reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            long inserted = 0;
+            AtomicLong inserted = new AtomicLong();
 
             reader.lines()
                     .skip(1)
                     .filter(line -> line != null && !line.isBlank())
+                    .limit(max_line)
                     .forEach(line -> {
                         String[] data = line.split(",");
 
@@ -191,6 +197,14 @@ public class App {
                                 // Mapping du Genre
                                 Genre genre = mapGenre(genreStr);
 
+                                Optional<Game> gameOpt = gameRepo.findFirstByName(gameName);
+
+                                if (gameOpt.isPresent()) {
+                                    // TODO: update the game by adding a genre to it
+                                    System.out.println("Added a genre to an existing game: " + genre);
+                                    return;
+                                }
+
                                 // Création du Jeu
                                 Game game = Game.newBuilder()
                                         .setId(null)
@@ -204,13 +218,15 @@ public class App {
 
                                 // Sauvegarde du jeu
                                 gameRepo.save(game);
+                                inserted.addAndGet(1);
+                                System.out.println("Added a new game: " + gameName);
                             } catch (Exception e) {
-                                throw new RuntimeException(e);
+                                System.out.println("Error: " + e.getMessage());
                             }
                         }
                     });
 
-            System.out.println("Import terminé depuis les ressources : " + inserted + " ajoutés.");
+            System.out.println("Import terminé depuis les ressources : " + inserted.get() + " ajoutés.");
         } catch (IOException e) {
             throw new RuntimeException("Erreur de lecture du fichier ressource", e);
         } catch (NumberFormatException e) {
