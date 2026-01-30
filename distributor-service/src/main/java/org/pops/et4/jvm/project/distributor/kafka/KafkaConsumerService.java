@@ -152,7 +152,7 @@ public class KafkaConsumerService {
 
         // Business logic: Update DistributedGame version for ALL distributors and send patch-distributed event for each
         List<DistributedGame> distributedGames = distributorService.patchPublished(event);
-        String gameName = event.getGameName();
+        String gameName = distributorService.getGameName(event.getGameId());
         
         // Send PatchDistributed event for each distributor
         for (DistributedGame distributedGame : distributedGames) {
@@ -450,7 +450,9 @@ public class KafkaConsumerService {
 
         try {
             // Business logic: Generate and send games page
-            String gamesPage = distributorService.buildGamesPage(event.getDistributorId(), event.getPlatform());
+            // Convert platform string to Platform enum
+            Platform platformEnum = Platform.valueOf(event.getPlatform().toString());
+            String gamesPage = distributorService.buildGamesPage(event.getDistributorId(), platformEnum);
             producerService.sendSendGamesPage(gamesPage);
             System.out.println("[Consumer] " + AskGamesPage.TOPIC + "(" + record.key() + "): Games page sent for platform " + event.getPlatform());
         } catch (Exception e) {

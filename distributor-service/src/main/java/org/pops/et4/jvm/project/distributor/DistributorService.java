@@ -541,7 +541,7 @@ public class DistributorService {
 
         // Get all reviews for this game
         List<Review> reviews = reviewRepository.findAll().stream()
-                .filter(review -> review.getGameId().equals(gameId))
+                .filter(review -> review.getGameId() == gameId)
                 .toList();
 
         StringBuilder page = new StringBuilder();
