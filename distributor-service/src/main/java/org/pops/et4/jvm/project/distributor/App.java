@@ -3,7 +3,11 @@ package org.pops.et4.jvm.project.distributor;
 import org.pops.et4.jvm.project.distributor.kafka.KafkaLifecycleService;
 import org.pops.et4.jvm.project.distributor.kafka.KafkaProducerService;
 import org.pops.et4.jvm.project.schemas.models.distributor.Distributor;
+import org.pops.et4.jvm.project.schemas.repositories.distributor.DistributedGameRepository;
 import org.pops.et4.jvm.project.schemas.repositories.distributor.DistributorRepository;
+import org.pops.et4.jvm.project.schemas.repositories.distributor.OwnedGameRepository;
+import org.pops.et4.jvm.project.schemas.repositories.distributor.PlayerRepository;
+import org.pops.et4.jvm.project.schemas.repositories.distributor.ReviewRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -30,10 +34,10 @@ public class App {
             @Qualifier(KafkaLifecycleService.BEAN_NAME) KafkaLifecycleService lifecycle,
             @Qualifier(DistributorRepository.BEAN_NAME) DistributorRepository distributorRepository,
             @Qualifier(DistributorService.BEAN_NAME) DistributorService distributorService,
-            @Qualifier("distributorDbDistributedGameRepository") org.pops.et4.jvm.project.schemas.repositories.distributor.DistributedGameRepository distributedGameRepository,
-            @Qualifier("distributorDbPlayerRepository") org.pops.et4.jvm.project.schemas.repositories.distributor.PlayerRepository playerRepository,
-            @Qualifier("distributorDbOwnedGameRepository") org.pops.et4.jvm.project.schemas.repositories.distributor.OwnedGameRepository ownedGameRepository,
-            @Qualifier("distributorDbReviewRepository") org.pops.et4.jvm.project.schemas.repositories.distributor.ReviewRepository reviewRepository
+            @Qualifier(DistributedGameRepository.BEAN_NAME) DistributedGameRepository distributedGameRepository,
+            @Qualifier(PlayerRepository.BEAN_NAME) PlayerRepository playerRepository,
+            @Qualifier(OwnedGameRepository.BEAN_NAME) OwnedGameRepository ownedGameRepository,
+            @Qualifier(ReviewRepository.BEAN_NAME) ReviewRepository reviewRepository
     ) {
         return ignored -> {
             Thread.sleep(1000);
@@ -50,48 +54,42 @@ public class App {
 
                     System.out.println("---------------------------------");
 
-                    switch (cmd[0]) {
-                        case "exit":
-                        case "quit":
-                            System.out.println("Exiting Manual Test Mode...");
-                            running = false;
-                            break;
+                    try {
+                        switch (cmd[0]) {
+                            case "exit":
+                            case "quit":
+                                System.out.println("Exiting Manual Test Mode...");
+                                System.exit(0);
+                                break;
 
-                        case "start":
-                            System.out.println("> Starting Listener(s)");
-                            for (String listenerId: args)
-                                lifecycle.startListener(listenerId);
-                            break;
+                            case "start":
+                                System.out.println("> Starting Listener(s)");
+                                for (String listenerId: args)
+                                    lifecycle.startListener(listenerId);
+                                break;
 
-                        case "stop":
-                            System.out.println("> Stopping Listener(s)");
-                            for (String listenerId: args)
-                                lifecycle.stopListener(listenerId);
-                            break;
+                            case "stop":
+                                System.out.println("> Stopping Listener(s)");
+                                for (String listenerId: args)
+                                    lifecycle.stopListener(listenerId);
+                                break;
 
-                        case "send":
-                            System.out.println("> Sending 'ExampleEvent'...");
-                            producer.sendExampleEvent(String.join(" ", args));
-                            break;
-
-                        case "get-distributor":
-                            System.out.println("> Get distributors...");
-                            for (Distributor distributor: distributorRepository.findAll())
-                                System.out.println(distributor);
-                            break;
-
-                        case "add-distributor":
+                            case "add-distributor":
                             System.out.println("> Adding new distributor...");
                             if (args.length < 1) {
-                                System.err.println("Too few arguments, required: 1");
+                                System.err.println("Error: Too few arguments, required: 1 (name)");
                                 break;
                             }
-                            Distributor entity = Distributor.newBuilder()
-                                    .setId(null)
-                                    .setName(args[0])
-                                    .build();
-                            Distributor distributor1 = distributorRepository.save(entity);
-                            System.out.println("Added distributor: " + distributor1);
+                            try {
+                                Distributor entity = Distributor.newBuilder()
+                                        .setId(null)
+                                        .setName(args[0])
+                                        .build();
+                                Distributor distributor1 = distributorRepository.save(entity);
+                                System.out.println("Added distributor: " + distributor1);
+                            } catch (Exception e) {
+                                System.err.println("Error adding distributor: " + e.getMessage());
+                            }
                             break;
 
                         case "remove-distributor":
@@ -100,19 +98,28 @@ public class App {
                                 try {
                                     Long id = Long.parseLong(distributorId);
                                     Optional<Distributor> distributorOpt = distributorRepository.findById(id);
-                                    if (distributorOpt.isEmpty()) throw new RuntimeException();
-                                    Distributor distributor2 = distributorOpt.get();
-                                    distributorRepository.delete(distributor2);
-                                    System.out.println("Removed distributor: " + distributor2);
-                                } catch (NumberFormatException e) {
-                                    Optional<Distributor> distributorOpt = distributorRepository.findFirstByName(distributorId);
                                     if (distributorOpt.isEmpty()) {
-                                        System.out.println("Error: '" + distributorId + "' is not a valid distributor ID.");
-                                        break;
+                                        System.err.println("Error: Distributor with ID '" + distributorId + "' not found.");
+                                        continue;
                                     }
                                     Distributor distributor2 = distributorOpt.get();
                                     distributorRepository.delete(distributor2);
                                     System.out.println("Removed distributor: " + distributor2);
+                                } catch (NumberFormatException e) {
+                                    try {
+                                        Optional<Distributor> distributorOpt = distributorRepository.findFirstByName(distributorId);
+                                        if (distributorOpt.isEmpty()) {
+                                            System.err.println("Error: Distributor with name '" + distributorId + "' not found.");
+                                            continue;
+                                        }
+                                        Distributor distributor2 = distributorOpt.get();
+                                        distributorRepository.delete(distributor2);
+                                        System.out.println("Removed distributor: " + distributor2);
+                                    } catch (Exception ex) {
+                                        System.err.println("Error removing distributor '" + distributorId + "': " + ex.getMessage());
+                                    }
+                                } catch (Exception e) {
+                                    System.err.println("Error removing distributor '" + distributorId + "': " + e.getMessage());
                                 }
                             }
                             break;
@@ -120,7 +127,7 @@ public class App {
                         case "start-sale":
                             System.out.println("> Starting sale...");
                             if (args.length < 3) {
-                                System.err.println("Too few arguments, required: 3 (distributorId gameId salePercentage)");
+                                System.err.println("Error: Too few arguments, required: 3 (distributorId gameId salePercentage)");
                                 break;
                             }
                             try {
@@ -132,77 +139,116 @@ public class App {
                                 producer.sendSaleStarted(distId, gId, salePerc, gameName);
                                 System.out.println("Sale started: " + salePerc * 100 + "% off on game " + gId);
                             } catch (NumberFormatException e) {
-                                System.err.println("Invalid number format");
+                                System.err.println("Error: Invalid number format for arguments");
                             } catch (Exception e) {
-                                System.err.println("Error: " + e.getMessage());
+                                System.err.println("Error starting sale: " + e.getMessage());
                             }
                             break;
 
                         case "list-games":
                             System.out.println("> Listing distributed games...");
-                            if (args.length < 1) {
-                                System.out.println("All distributed games:");
-                                for (var game: distributedGameRepository.findAll())
-                                    System.out.println(game);
-                            } else {
-                                try {
-                                    Long distId = Long.parseLong(args[0]);
-                                    System.out.println("Games for distributor " + distId + ":");
+                            try {
+                                if (args.length < 1) {
+                                    System.out.println("All distributed games:");
                                     for (var game: distributedGameRepository.findAll())
-                                        if (game.getDistributor() != null && Objects.equals(game.getDistributor().getId(), distId))
-                                            System.out.println(game);
-                                } catch (NumberFormatException e) {
-                                    System.err.println("Invalid distributor ID");
+                                        System.out.println(game);
+                                } else {
+                                    try {
+                                        Long distId = Long.parseLong(args[0]);
+                                        System.out.println("Games for distributor " + distId + ":");
+                                        for (var game: distributedGameRepository.findAll())
+                                            if (game.getDistributor() != null && Objects.equals(game.getDistributor().getId(), distId))
+                                                System.out.println(game);
+                                    } catch (NumberFormatException e) {
+                                        System.err.println("Error: Invalid distributor ID format");
+                                    }
                                 }
+                            } catch (Exception e) {
+                                System.err.println("Error listing games: " + e.getMessage());
                             }
                             break;
 
                         case "list-players":
                             System.out.println("> Listing players...");
-                            for (var player: playerRepository.findAll())
-                                System.out.println(player);
+                            try {
+                                for (var player: playerRepository.findAll())
+                                    System.out.println(player);
+                            } catch (Exception e) {
+                                System.err.println("Error listing players: " + e.getMessage());
+                            }
                             break;
 
                         case "list-owned-games":
                             System.out.println("> Listing owned games...");
-                            if (args.length < 1) {
-                                System.out.println("All owned games:");
-                                for (var owned: ownedGameRepository.findAll())
-                                    System.out.println(owned);
-                            } else {
-                                try {
-                                    Long playerId = Long.parseLong(args[0]);
-                                    System.out.println("Games owned by player " + playerId + ":");
+                            try {
+                                if (args.length < 1) {
+                                    System.out.println("All owned games:");
                                     for (var owned: ownedGameRepository.findAll())
-                                        if (owned.getPlayer() != null && Objects.equals(owned.getPlayer().getId(), playerId))
-                                            System.out.println(owned);
-                                } catch (NumberFormatException e) {
-                                    System.err.println("Invalid player ID");
+                                        System.out.println(owned);
+                                } else {
+                                    try {
+                                        Long playerId = Long.parseLong(args[0]);
+                                        System.out.println("Games owned by player " + playerId + ":");
+                                        for (var owned: ownedGameRepository.findAll())
+                                            if (owned.getPlayer() != null && Objects.equals(owned.getPlayer().getId(), playerId))
+                                                System.out.println(owned);
+                                    } catch (NumberFormatException e) {
+                                        System.err.println("Error: Invalid player ID format");
+                                    }
                                 }
+                            } catch (Exception e) {
+                                System.err.println("Error listing owned games: " + e.getMessage());
                             }
                             break;
 
                         case "list-reviews":
                             System.out.println("> Listing reviews...");
-                            if (args.length < 1) {
-                                System.out.println("All reviews:");
-                                for (var review: reviewRepository.findAll())
-                                    System.out.println(review);
-                            } else {
-                                try {
-                                    Long gameId = Long.parseLong(args[0]);
-                                    System.out.println("Reviews for game " + gameId + ":");
+                            try {
+                                if (args.length < 1) {
+                                    System.out.println("All reviews:");
                                     for (var review: reviewRepository.findAll())
-                                        if (review.getGameId() == gameId)
-                                            System.out.println(review);
-                                } catch (NumberFormatException e) {
-                                    System.err.println("Invalid game ID");
+                                        System.out.println(review);
+                                } else {
+                                    try {
+                                        Long gameId = Long.parseLong(args[0]);
+                                        System.out.println("Reviews for game " + gameId + ":");
+                                        for (var review: reviewRepository.findAll())
+                                            if (review.getGameId() == gameId)
+                                                System.out.println(review);
+                                    } catch (NumberFormatException e) {
+                                        System.err.println("Error: Invalid game ID format");
+                                    }
                                 }
+                            } catch (Exception e) {
+                                System.err.println("Error listing reviews: " + e.getMessage());
+                            }
+                            break;
+
+                        case "get-distributor":
+                            System.out.println("> Get distributors...");
+                            try {
+                                for (Distributor distributor: distributorRepository.findAll())
+                                    System.out.println(distributor);
+                            } catch (Exception e) {
+                                System.err.println("Error getting distributors: " + e.getMessage());
+                            }
+                            break;
+
+                        case "send":
+                            System.out.println("> Sending 'ExampleEvent'...");
+                            try {
+                                producer.sendExampleEvent(String.join(" ", args));
+                            } catch (Exception e) {
+                                System.err.println("Error sending event: " + e.getMessage());
                             }
                             break;
 
                         default:
                             System.out.println("Invalid option. Please try again.");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error executing command: " + e.getMessage());
+                        e.printStackTrace();
                     }
 
                     Thread.sleep(500);

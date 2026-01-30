@@ -8,6 +8,53 @@
             "name": "reviewId",
             "doc": "ID of the review",
             "type": "long"
+        },
+        {
+            "name": "gameId",
+            "doc": "ID of the game",
+            "type": "long"
+        },
+        {
+            "name": "distributorId",
+            "doc": "ID of the distributor",
+            "type": "long"
+        },
+        {
+            "name": "rating",
+            "doc": "Rating given (e.g., 1-5 )",
+            "type": "int"
+        },
+        {
+            "name": "comment",
+            "doc": "Review comment text",
+            "type": ["null", "string"],
+            "default": null
+        },
+        {
+            "name": "publicationDate",
+            "doc": "Publication date of the review",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-micros"
+            }
+        },
+        {
+            "name": "positiveReactionPlayerIds",
+            "doc": "List of player IDs who gave positive reactions",
+            "type": {
+                "type": "array",
+                "items": "long"
+            },
+            "default": []
+        },
+        {
+            "name": "negativeReactionPlayerIds",
+            "doc": "List of player IDs who gave negative reactions",
+            "type": {
+                "type": "array",
+                "items": "long"
+            },
+            "default": []
         }
     ]
 }

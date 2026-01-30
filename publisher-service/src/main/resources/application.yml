@@ -2,9 +2,9 @@ shared-config:
   port: 8082
   name: publisher-service
   db:
-    base-url: jdbc:postgresql://localhost:5432
-    username: publisher_user
-    password: publisher123
+    base-url: jdbc:postgresql://localhost:5432 #5432 normalement
+    username: postgres
+    password: root
     driver: org.postgresql.Driver
   kafka:
     bootstrap: localhost:9092

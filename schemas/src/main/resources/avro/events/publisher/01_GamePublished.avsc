@@ -20,6 +20,28 @@
       "doc": "Version of the game",
       "type": "string",
       "default": "1.0.0"
+    },
+    {
+      "name": "publisherId",
+      "doc": "ID of the publisher of the game",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "platforms",
+      "doc": "The platforms where the game can be launched",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "genres",
+      "doc": "Game genres",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
     }
   ]
 }

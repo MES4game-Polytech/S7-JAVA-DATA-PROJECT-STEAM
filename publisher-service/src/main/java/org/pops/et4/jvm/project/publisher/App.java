@@ -1,5 +1,7 @@
 package org.pops.et4.jvm.project.publisher;
 
+import jakarta.transaction.Transactional;
+import org.pops.et4.jvm.project.publisher.kafka.KafkaConsumerService;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaLifecycleService;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaProducerService;
 import org.pops.et4.jvm.project.schemas.models.publisher.Genre;
@@ -14,7 +16,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SpringBootApplication
 public class App {
@@ -30,19 +39,10 @@ public class App {
             @Qualifier(KafkaProducerService.BEAN_NAME) KafkaProducerService producer,
             @Qualifier(KafkaLifecycleService.BEAN_NAME) KafkaLifecycleService lifecycle,
             @Qualifier(PublisherRepository.BEAN_NAME) PublisherRepository publisherRepository,
-            @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository // Ajoute bien le repo Game ici
+            @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository
     ) {
         return ignored -> {
             Thread.sleep(1000);
-
-            // --- AUTOMATISATION DE L'IMPORT AU DÉMARRAGE ---
-            System.out.println("> Vérification de la base de données...");
-            if (publisherRepository.count() == 0) {
-                System.out.println("> Base vide. Lancement de l'importation automatique du CSV...");
-                handleCsvImport(publisherRepository, gameRepository);
-            } else {
-                System.out.println("> Données déjà présentes (" + publisherRepository.count() + " éditeurs).");
-            }
 
             try (Scanner scanner = new Scanner(System.in)) {
                 boolean running = true;
@@ -60,7 +60,16 @@ public class App {
                         case "exit":
                         case "quit":
                             System.out.println("Exiting Manual Test Mode...");
-                            running = false;
+                            System.exit(0);
+                            break;
+
+                        case "load-csv":
+                            System.out.println("Loading Data in DB...");
+                            if (args.length < 1) {
+                                System.err.println("Too few arguments, required: 1");
+                                break;
+                            }
+                            this.handleCsvImport(publisherRepository, gameRepository, Long.parseLong(args[0]));
                             break;
 
                         case "start":
@@ -78,7 +87,7 @@ public class App {
                         // --- COMMANDES KAFKA PRODUCER ---
                         case "publish-game":
                             System.out.println("> Publishing Game event...");
-                            handlePublishGame(producer, args);
+                            handlePublishGame(producer, gameRepository, args);
                             break;
 
                         case "publish-patch":
@@ -145,90 +154,139 @@ public class App {
         };
     }
 
-    private void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo) {
-        String csvFile = "src/main/resources/vgsales.csv";
-        int count = 0;
-        // Ajout de la variable manquante pour la date de sortie
-        java.time.Instant now = java.time.Instant.now();
+    private static final String CSV_FILENAME = "vgsales.csv";
 
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(csvFile))) {
-            br.readLine(); // Ignorer le header
+    @Transactional
+    public void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo, long max_line) {
 
-            String line;
-            while ((line = br.readLine()) != null && count < 500) { // On peut monter à 500 pour un bon jeu de test
-                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(App.CSV_FILENAME);
 
-                if (data.length >= 6) {
-                    String gameName = data[1].replace("\"", "");
-                    String platformStr = data[2].toUpperCase();
-                    String genreStr = data[4].toUpperCase();
-                    String publisherName = data[5].replace("\"", "");
+        if (inputStream == null) {
+            throw new IllegalArgumentException("Le fichier " + App.CSV_FILENAME + " est introuvable dans les ressources.");
+        }
 
-                    // Mapping de l'Editeur
-                    Publisher publisher = pubRepo.findFirstByName(publisherName)
-                            .orElseGet(() -> pubRepo.save(Publisher.newBuilder()
-                                    .setName(publisherName)
-                                    .setIsCompany(true)
-                                    .build()));
+        try (var reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            AtomicLong inserted = new AtomicLong();
 
-                    // Mapping de la Plateforme (Sécurisé)
-                    Platform platform = mapPlatform(platformStr);
+            reader.lines()
+                    .skip(1)
+                    .filter(line -> line != null && !line.isBlank())
+                    .limit(max_line)
+                    .forEach(line -> {
+                        String[] data = line.split(",");
 
-                    // Mapping du Genre (Sécurisé)
-                    Genre genre = mapGenre(genreStr);
+                        if (data.length >= 6) {
+                            String gameName = data[0].replace("\"", "").trim();
+                            String platformStr = data[1].toUpperCase().trim();
+                            String genreStr = data[3].toUpperCase().trim();
+                            String publisherName = data[4].replace("\"", "").trim();
 
-                    // Création du Jeu (si ton schéma Game le permet)
-                    Game game = Game.newBuilder()
-                            .setName(gameName)
-                    .setPublisher(publisher)
-                    .setVersion("1.0.0")
-                    .setReleaseDate(now)
-                    .setPlatforms(List.of(platform))
-                    .setGenres(List.of(genre))
-                    .build();
+                            try {
+                                // Mapping de l'Editeur
+                                Publisher publisher = pubRepo.findFirstByName(publisherName)
+                                        .orElseGet(() -> pubRepo.save(Publisher.newBuilder()
+                                                .setId(null)
+                                                .setName(publisherName)
+                                                .setIsCompany(true)
+                                                .build()
+                                        ));
 
-                    gameRepo.save(game);
-                    count++;
-                }
-            }
-            System.out.println("> Importation terminée avec succès !");
-        } catch (Exception e) {
-            System.err.println("> Erreur lors de l'importation : " + e.getMessage());
+                                // Mapping de la Plateforme
+                                Platform platform = mapPlatform(platformStr);
+
+                                // Mapping du Genre
+                                Genre genre = mapGenre(genreStr);
+
+                                Optional<Game> gameOpt = gameRepo.findFirstByName(gameName);
+
+                                if (gameOpt.isPresent()) {
+                                    // TODO: update the game by adding a genre to it
+                                    System.out.println("Added a genre to an existing game: " + genre);
+                                    return;
+                                }
+
+                                // Création du Jeu
+                                Game game = Game.newBuilder()
+                                        .setId(null)
+                                        .setName(gameName)
+                                        .setPublisher(publisher)
+                                        .setVersion("1.0.0")
+                                        .setReleaseDate(Instant.now())
+                                        .setPlatforms(List.of(platform))
+                                        .setGenres(List.of(genre))
+                                        .build();
+
+                                // Sauvegarde du jeu
+                                gameRepo.save(game);
+                                inserted.addAndGet(1);
+                                System.out.println("Added a new game: " + gameName);
+                            } catch (Exception e) {
+                                System.out.println("Error: " + e.getMessage());
+                            }
+                        }
+                    });
+
+            System.out.println("Import terminé depuis les ressources : " + inserted.get() + " ajoutés.");
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur de lecture du fichier ressource", e);
+        } catch (NumberFormatException e) {
+            System.err.println("Erreur de format dans le CSV : " + e.getMessage());
         }
     }
 
     // --- MÉTHODES DE MAPPING (HELPER) ---
     private Platform mapPlatform(String csvPlatform) {
         try {
-            // Gérer les cas particuliers du CSV
-            if (csvPlatform.equals("PC")) return Platform.WINDOWS;
-            if (csvPlatform.contains("PS4")) return Platform.PS4;
-            if (csvPlatform.contains("XONE")) return Platform.XBOX_ONE;
-
-            return Platform.valueOf(csvPlatform);
+            return switch (csvPlatform) {
+                case "WS" -> Platform.PC;
+                case "2600" -> Platform.ATARI_2600;
+                case "SAT" -> Platform.SATURN;
+                case "3DS" -> Platform.NINTENDO_3DS;
+                case "WIIU" -> Platform.WII_U;
+                case "SNES" -> Platform.SUPER_NES;
+                case "DC" -> Platform.DREAM_CAST;
+                case "3DO" -> Platform.INTERACTIVE_3D0;
+                case "XB" -> Platform.XBOX;
+                case "GB" -> Platform.GAME_BOY;
+                case "GBA" -> Platform.GAME_BOY_ADVANCED;
+                case "GC" -> Platform.GAME_CUBE;
+                case "GEN" -> Platform.GENESIS;
+                case "GG" -> Platform.GAME_GEAR;
+                case "NG" -> Platform.NEO_GEO;
+                case "SCD" -> Platform.SEGA_CD;
+                case "TG16" -> Platform.TURBO_GRAF;
+                default -> Platform.valueOf(csvPlatform);
+            };
         } catch (IllegalArgumentException e) {
-            return Platform.WINDOWS; // Valeur par défaut si inconnu
+            return Platform.UNKNOWN; // Valeur par défaut si inconnu
         }
     }
 
     private Genre mapGenre(String csvGenre) {
         try {
-            return Genre.valueOf(csvGenre);
+            return switch (csvGenre) {
+                case "ROLE-PLAYING" -> Genre.RPG;
+                default -> Genre.valueOf(csvGenre);
+            };
         } catch (IllegalArgumentException e) {
-            return Genre.ACTION; // Valeur par défaut
+            return Genre.UNKNOWN; // Valeur par défaut
         }
     }
 
-    private void handlePublishGame(KafkaProducerService producer, String[] args) {
-        if (args.length < 3) {
-            System.out.println("Usage: publish-game [id] [name] [version]");
+    private void handlePublishGame(KafkaProducerService producer, GameRepository gameRepo, String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: publish-game [gameId]");
             return;
         }
         try {
             long id = Long.parseLong(args[0]);
-            String name = args[1];
-            String v = args[2];
-            producer.sendGamePublished(id, name, v);
+            gameRepo.findById(id).ifPresentOrElse(
+                    game -> {
+                        producer.sendGamePublished(game); // On envoie l'objet complet
+                        System.out.println("> Game '" + game.getName() + "' send to the Distributor.");
+                    },
+                    () -> System.out.println("> Error : No games found with the ID " + id)
+            );
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -255,10 +313,14 @@ public class App {
         System.out.println("=================================");
         System.out.println("\n[SYSTEM]");
         System.out.println("* Exit                exit/quit");
+        System.out.println("\n[KAFKA CONSUMER EVENTS]");
         System.out.println("* Start Listener      start [listenerId...]");
         System.out.println("* Stop Listener       stop [listenerId...]");
+        System.out.println("  -> IDs: " + KafkaConsumerService.EXAMPLE_EVENT_CONSUMER_BEAN_NAME);
+        System.out.println("  -> " + KafkaConsumerService.GAME_REVIEWED_CONSUMER_BEAN_NAME);
+        System.out.println("  -> " + KafkaConsumerService.CRASH_REPORTED_CONSUMER_BEAN_NAME);
         System.out.println("\n[KAFKA PRODUCER EVENTS]");
-        System.out.println("* Publish Game        publish-game [gameId] [name] [version]");
+        System.out.println("* Publish Game        publish-game [gameId]");
         System.out.println("* Publish Patch       publish-patch [gameId] [version]");
         System.out.println("* Send Payload        send [payload]");
         System.out.println("\n[DATABASE]");
@@ -268,5 +330,4 @@ public class App {
         System.out.println();
         System.out.print("> ");
     }
-
 }
