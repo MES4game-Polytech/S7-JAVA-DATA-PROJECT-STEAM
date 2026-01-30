@@ -36,13 +36,6 @@ public class App {
         return ignored -> {
             Thread.sleep(1000);
 
-            // --- AUTOMATISATION DE L'IMPORT AU DÉMARRAGE ---
-            System.out.println("> Checking database status...");
-            long currentPubCount = publisherRepository.count();
-            System.out.println("> Current database state: " + currentPubCount + " publishers found.");
-            System.out.println("> Synchronizing with vgsales.csv...");
-            handleCsvImport(publisherRepository, gameRepository);
-
             try (Scanner scanner = new Scanner(System.in)) {
                 boolean running = true;
 
@@ -142,81 +135,6 @@ public class App {
                 }
             }
         };
-    }
-
-    private void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo) {
-        String csvFile = "src/main/resources/vgsales.csv";
-        int count = 0;
-        // Ajout de la variable manquante pour la date de sortie
-        java.time.Instant now = java.time.Instant.now();
-
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(csvFile))) {
-            br.readLine(); // Ignorer le header
-
-            String line;
-            while ((line = br.readLine()) != null && count < 500) { // On peut monter à 500 pour un bon jeu de test
-                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-
-                if (data.length >= 6) {
-                    String gameName = data[1].replace("\"", "");
-                    String platformStr = data[2].toUpperCase();
-                    String genreStr = data[4].toUpperCase();
-                    String publisherName = data[5].replace("\"", "");
-
-                    // Mapping de l'Editeur
-                    Publisher publisher = pubRepo.findFirstByName(publisherName)
-                            .orElseGet(() -> pubRepo.save(Publisher.newBuilder()
-                                    .setName(publisherName)
-                                    .setIsCompany(true)
-                                    .build()));
-
-                    // Mapping de la Plateforme (Sécurisé)
-                    Platform platform = mapPlatform(platformStr);
-
-                    // Mapping du Genre (Sécurisé)
-                    Genre genre = mapGenre(genreStr);
-
-                    // Création du Jeu (si ton schéma Game le permet)
-                    Game game = Game.newBuilder()
-                            .setName(gameName)
-                    .setPublisher(publisher)
-                    .setVersion("1.0.0")
-                    .setReleaseDate(now)
-                    .setPlatforms(List.of(platform))
-                    .setGenres(List.of(genre))
-                    .build();
-
-                    gameRepo.save(game);
-                    count++;
-                }
-            }
-            System.out.println("> Import successfully completed!");
-        } catch (Exception e) {
-            System.err.println("> Error during import: " + e.getMessage());
-        }
-    }
-
-    // --- MÉTHODES DE MAPPING (HELPER) ---
-    private Platform mapPlatform(String csvPlatform) {
-        try {
-            // Gérer les cas particuliers du CSV
-            if (csvPlatform.equals("WS")) return Platform.WINDOWS;
-            if (csvPlatform.equals("PC")) return Platform.WINDOWS;
-            if (csvPlatform.contains("PS4")) return Platform.PS4;
-            if (csvPlatform.contains("XONE")) return Platform.XBOX_ONE;
-
-            return Platform.valueOf(csvPlatform);
-        } catch (IllegalArgumentException e) {
-            return Platform.WINDOWS; // Valeur par défaut si inconnu
-        }
-    }
-
-    private Genre mapGenre(String csvGenre) {
-        try {
-            return Genre.valueOf(csvGenre);
-        } catch (IllegalArgumentException e) {
-            return Genre.ACTION; // Valeur par défaut
-        }
     }
 
     private void handlePublishGame(KafkaProducerService producer, GameRepository gameRepo, String[] args) {

@@ -47,9 +47,9 @@ public class PublisherService {
         Review review = Review.newBuilder()
                 .setGame(game)
                 .setId(event.getReviewId())
-                //.setRating(event.getRating())
-                //.setComment(event.getComment())
-                //.setPublicationDate(event.getPublicationDate())
+                .setRating(event.getRating())
+                .setComment(event.getComment())
+                .setPublicationDate(event.getPublicationDate())
                 .build();
 
         long negativeReviewsCount = reviewRepository.findAll().stream()
