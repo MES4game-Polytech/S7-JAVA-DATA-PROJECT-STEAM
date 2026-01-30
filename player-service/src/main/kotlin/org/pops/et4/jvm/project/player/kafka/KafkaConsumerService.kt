@@ -27,6 +27,7 @@ class KafkaConsumerService(
         const val SALE_STARTED_CONSUMER_BEAN_NAME = "playerServiceSaleStartedConsumer"
         const val SEND_GAME_FILE_CONSUMER_BEAN_NAME = "playerServiceSendGameFileConsumer"
         const val REVIEW_REFUSED_CONSUMER_BEAN_NAME = "playerServiceReviewRefusedConsumer"
+        const val SEND_PLAYER_PAGE_CONSUMER_BEAN_NAME = "playerServiceSendPlayerPageConsumer"
     }
 
     private val _logs = ArrayList<ConsumeLog<out KafkaEvent>>()
@@ -63,16 +64,13 @@ class KafkaConsumerService(
         val event = record.value()
         
         println("[Consumer] ${GameDistributed.TOPIC}(${record.key()}): New game '${event.getGameName()}' (ID: ${event.getGameId()}) available from distributor ${event.getDistributorId()}")
-        
-   
-        
         println("[Consumer] ${GameDistributed.TOPIC}(${record.key()}): FINISHED")
     }
 
     /**
      * Consumer for PatchDistributed event
      * Triggered when a game update/patch is available
-     * Should notify players who have the game installed
+     * Should notify players 
      */
     @KafkaListener(
         id = PATCH_DISTRIBUTED_CONSUMER_BEAN_NAME,
@@ -93,21 +91,13 @@ class KafkaConsumerService(
         )
 
         val event = record.value()
-        
         println("[Consumer] ${PatchDistributed.TOPIC}(${record.key()}): Patch ${event.getNewVersion()} available for '${event.getGameName()}' (ID: ${event.getGameId()})")
         
-        // TODO: Implement business logic
-        // - Find all players with this game installed
-        // - Notify them of the available update
-        // - Possibly auto-trigger update based on player settings
-        
-
     }
 
     /**
      * Consumer for SaleStarted event
      * Triggered when a game goes on sale
-     * Should notify players who wishlisted the game
      */
     @KafkaListener(
         id = SALE_STARTED_CONSUMER_BEAN_NAME,
@@ -131,12 +121,6 @@ class KafkaConsumerService(
         val discountPercent = (event.getSalePercentage() * 100).toInt()
         
         println("[Consumer] ${SaleStarted.TOPIC}(${record.key()}): Sale ${discountPercent}% off on '${event.getGameName()}' (ID: ${event.getGameId()})")
-        
-        // TODO: Implement business logic
-        // - Find all players who wishlisted this game
-        // - Send notifications about the sale
-        // - Update game pricing in catalog
-        
         println("[Consumer] ${SaleStarted.TOPIC}(${record.key()}): FINISHED")
     }
 
@@ -165,7 +149,6 @@ class KafkaConsumerService(
         )
 
         val event = record.value()
-        
         println("[Consumer] ${SendGameFile.TOPIC}(${record.key()}): Game files for '${event.getGameName()}' v${event.getVersion()} sent to player '${event.getPlayerName()}' (ID: ${event.getTargetId()}) on ${event.getPlatform()}")
         
         try {
@@ -241,11 +224,38 @@ class KafkaConsumerService(
         val event = record.value()
         
         println("[Consumer] ${ReviewRefused.TOPIC}(${record.key()}): Review (ID: ${event.getReviewId()}) by '${event.getPlayerName()}' for '${event.getGameName()}' has been refused")
-        
-        // TODO: Implement business logic
-        // - Notify the player that their review was refused
-        // - Update review status in database if tracked locally
-        
         println("[Consumer] ${ReviewRefused.TOPIC}(${record.key()}): FINISHED")
+    }
+
+    /**
+     * Consumer for SendPlayerPage event
+     * Triggered when the distributor sends the player's profile page
+     * Displays the formatted player page content
+     */
+    @KafkaListener(
+        id = SEND_PLAYER_PAGE_CONSUMER_BEAN_NAME,
+        containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
+        topics = [SendPlayerPage.TOPIC],
+        groupId = "\${spring.kafka.consumer.group-id}",
+        autoStartup = "false"
+    )
+    @Transactional(transactionManager = PlayerDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
+    fun consumeSendPlayerPage(record: ConsumerRecord<String, SendPlayerPage>) {
+        _logs.add(
+            ConsumeLog(
+                SEND_PLAYER_PAGE_CONSUMER_BEAN_NAME,
+                Instant.now(),
+                record.key(),
+                record.value()
+            )
+        )
+
+        val event = record.value()
+        
+        println("[Consumer] ${SendPlayerPage.TOPIC}(${record.key()}): Received player page:")
+        println("=".repeat(80))
+        println(event.getPage())
+        println("=".repeat(80))
+        println("[Consumer] ${SendPlayerPage.TOPIC}(${record.key()}): FINISHED")
     }
 }
