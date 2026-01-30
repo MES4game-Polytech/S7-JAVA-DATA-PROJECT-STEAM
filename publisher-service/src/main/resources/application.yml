@@ -2,9 +2,9 @@ shared-config:
   port: 8082
   name: publisher-service
   db:
-    base-url: jdbc:postgresql://localhost:5432
-    username: publisher_user
-    password: publisher123
+    base-url: jdbc:postgresql://localhost:5433 #5432 normalement
+    username: postgres
+    password: root
     driver: org.postgresql.Driver
   kafka:
     bootstrap: localhost:9092
@@ -45,9 +45,14 @@ spring:
 
   jpa:
     open-in-view: false
+    hibernate: #ajout
+      ddl-auto: update  #ajout
     properties:
       hibernate:
-        hbm2ddl.auto: none
+        dialect: org.hibernate.dialect.PostgreSQLDialect   #ajout
+        show_sql: true  #ajout pour afficher ce que fait Hibernate
+        format_sql: true  #ajout pour afficher ce que fait Hibernate
+        hbm2ddl.auto: update   #none pou update
 
   kafka:
     bootstrap-servers: ${shared-config.kafka.bootstrap}
