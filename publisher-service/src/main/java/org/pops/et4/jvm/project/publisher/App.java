@@ -60,7 +60,7 @@ public class App {
                         case "exit":
                         case "quit":
                             System.out.println("Exiting Manual Test Mode...");
-                            running = false;
+                            System.exit(0);
                             break;
 
                         case "load-csv":
