@@ -3,12 +3,14 @@ package org.pops.et4.jvm.project.publisher.kafka;
 import org.pops.et4.jvm.project.schemas.events.ExampleEvent;
 import org.pops.et4.jvm.project.schemas.events.GamePublished;
 import org.pops.et4.jvm.project.schemas.events.PatchPublished;
+import org.pops.et4.jvm.project.schemas.models.publisher.Game;
 import org.pops.et4.jvm.project.schemas.repositories.publisher.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,13 +55,26 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendGamePublished(long gameId, String gameName, String version){
+    public void sendGamePublished(Game game){
         String topic = GamePublished.TOPIC;
         String key = UUID.randomUUID().toString();
+
+        // Conversion des List<Enum> en List<String>
+        List<String> platformStrings = game.getPlatforms().stream()
+                .map(Enum::name)
+                .toList();
+
+        List<String> genreStrings = game.getGenres().stream()
+                .map(Enum::name)
+                .toList();
+
         GamePublished event = GamePublished.newBuilder()
-                .setGameId(gameId)
-                .setGameName(gameName)
-                .setVersion(version)
+                .setGameId(game.getId())
+                .setGameName(game.getName())
+                .setVersion(game.getVersion())
+                .setPublisherId(game.getPublisher().getId())
+                .setPlatforms(platformStrings)
+                .setGenres(genreStrings)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);

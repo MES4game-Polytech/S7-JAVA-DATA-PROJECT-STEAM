@@ -1,12 +1,14 @@
 package org.pops.et4.jvm.project.publisher.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.pops.et4.jvm.project.publisher.PublisherService;
 import org.pops.et4.jvm.project.publisher.db.PublisherDbConfig;
 import org.pops.et4.jvm.project.schemas.events.ConsumeLog;
 import org.pops.et4.jvm.project.schemas.events.ExampleEvent;
 import org.pops.et4.jvm.project.schemas.events.GameReviewed;
 import org.pops.et4.jvm.project.schemas.events.CrashReported;
 import org.pops.et4.jvm.project.schemas.events.KafkaEvent;
+import org.pops.et4.jvm.project.schemas.models.publisher.Review;
 import org.pops.et4.jvm.project.schemas.repositories.publisher.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,6 +31,7 @@ public class KafkaConsumerService {
     public static final String CRASH_REPORTED_CONSUMER_BEAN_NAME = "publisherServiceCrashReportedConsumer";
 
     private final KafkaProducerService producerService;
+    private final PublisherService publisherService;
     private final PublisherRepository publisherRepository;
     private final GameRepository gameRepository;
     private final PatchRepository patchRepository;
@@ -40,6 +43,7 @@ public class KafkaConsumerService {
     @Autowired
     public KafkaConsumerService(
             @Qualifier(KafkaProducerService.BEAN_NAME) KafkaProducerService producerService,
+            @Qualifier(PublisherService.BEAN_NAME) PublisherService publisherService,
             @Qualifier(PublisherRepository.BEAN_NAME) PublisherRepository publisherRepository,
             @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository,
             @Qualifier(PatchRepository.BEAN_NAME) PatchRepository patchRepository,
@@ -47,6 +51,7 @@ public class KafkaConsumerService {
             @Qualifier(ReviewRepository.BEAN_NAME) ReviewRepository reviewRepository
     ) {
         this.producerService = producerService;
+        this.publisherService = publisherService;
         this.publisherRepository = publisherRepository;
         this.gameRepository = gameRepository;
         this.patchRepository = patchRepository;
@@ -111,17 +116,11 @@ public class KafkaConsumerService {
         );
 
         GameReviewed event = record.value();
-        // TODO : plus tard chercher le jeu par son ID et mettre à jour sa note
-        // To add a new element in the database:
-        //Publisher entity = Publisher.newBuilder()
-        //        .setId(null)
-        //        .setName(event.getPayload())
-        //        .setIsCompany(true)
-        //        .build();
-        //Publisher savedPublisher = this.publisherRepository.save(entity);
-
-        // To call a producer if needed:
-        //this.producerService.sendExampleEvent();
+        try {
+            publisherService.processGameReview(event);
+        } catch (Exception e) {
+            System.err.println("[Consumer] Error processing review: " + e.getMessage());
+        }
         System.out.println("[Consumer] " + GameReviewed.TOPIC + "(" + record.key() + "): Review " + event.getReviewId() + " received.");
     }
 
@@ -144,17 +143,12 @@ public class KafkaConsumerService {
         );
 
         CrashReported event = record.value();
-        // TODO : Plus tard, enregistrer ce crash dans le CrashReportRepository
-        // To add a new element in the database:
-        //Publisher entity = Publisher.newBuilder()
-        //        .setId(null)
-        //        .setName(event.getPayload())
-        //        .setIsCompany(true)
-        //        .build();
-        //Publisher savedPublisher = this.publisherRepository.save(entity);
+        try {
+            publisherService.processCrashReport(event);
+        } catch (Exception e) {
+            System.err.println("[Consumer] Error processing crash: " + e.getMessage());
+        }
 
-        // To call a producer if needed:
-        //this.producerService.sendExampleEvent();
         System.out.println("[Consumer] " + CrashReported.TOPIC + "(" + record.key() + "): Crash on " + event.getPlatform() + " for Game " + event.getGameId());
     }
 

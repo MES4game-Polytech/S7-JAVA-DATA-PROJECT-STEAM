@@ -43,3 +43,13 @@ services:
       POSTGRES_PASSWORD: root
     volumes:
       - ./db-init:/docker-entrypoint-initdb.d
+
+  publisher-db:
+    image: postgres:18.1-alpine3.23
+    container_name: publisher-db
+    ports:
+      - "5433:5432" # On utilise 5433 pour éviter le conflit avec platform-db (5432)
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: publisher_db

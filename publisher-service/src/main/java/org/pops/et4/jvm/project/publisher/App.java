@@ -1,5 +1,6 @@
 package org.pops.et4.jvm.project.publisher;
 
+import org.pops.et4.jvm.project.publisher.kafka.KafkaConsumerService;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaLifecycleService;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaProducerService;
 import org.pops.et4.jvm.project.schemas.models.publisher.Genre;
@@ -30,19 +31,17 @@ public class App {
             @Qualifier(KafkaProducerService.BEAN_NAME) KafkaProducerService producer,
             @Qualifier(KafkaLifecycleService.BEAN_NAME) KafkaLifecycleService lifecycle,
             @Qualifier(PublisherRepository.BEAN_NAME) PublisherRepository publisherRepository,
-            @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository // Ajoute bien le repo Game ici
+            @Qualifier(GameRepository.BEAN_NAME) GameRepository gameRepository
     ) {
         return ignored -> {
             Thread.sleep(1000);
 
             // --- AUTOMATISATION DE L'IMPORT AU DÉMARRAGE ---
-            System.out.println("> Vérification de la base de données...");
-            if (publisherRepository.count() == 0) {
-                System.out.println("> Base vide. Lancement de l'importation automatique du CSV...");
-                handleCsvImport(publisherRepository, gameRepository);
-            } else {
-                System.out.println("> Données déjà présentes (" + publisherRepository.count() + " éditeurs).");
-            }
+            System.out.println("> Checking database status...");
+            long currentPubCount = publisherRepository.count();
+            System.out.println("> Current database state: " + currentPubCount + " publishers found.");
+            System.out.println("> Synchronizing with vgsales.csv...");
+            handleCsvImport(publisherRepository, gameRepository);
 
             try (Scanner scanner = new Scanner(System.in)) {
                 boolean running = true;
@@ -78,7 +77,7 @@ public class App {
                         // --- COMMANDES KAFKA PRODUCER ---
                         case "publish-game":
                             System.out.println("> Publishing Game event...");
-                            handlePublishGame(producer, args);
+                            handlePublishGame(producer, gameRepository, args);
                             break;
 
                         case "publish-patch":
@@ -191,9 +190,9 @@ public class App {
                     count++;
                 }
             }
-            System.out.println("> Importation terminée avec succès !");
+            System.out.println("> Import successfully completed!");
         } catch (Exception e) {
-            System.err.println("> Erreur lors de l'importation : " + e.getMessage());
+            System.err.println("> Error during import: " + e.getMessage());
         }
     }
 
@@ -201,6 +200,7 @@ public class App {
     private Platform mapPlatform(String csvPlatform) {
         try {
             // Gérer les cas particuliers du CSV
+            if (csvPlatform.equals("WS")) return Platform.WINDOWS;
             if (csvPlatform.equals("PC")) return Platform.WINDOWS;
             if (csvPlatform.contains("PS4")) return Platform.PS4;
             if (csvPlatform.contains("XONE")) return Platform.XBOX_ONE;
@@ -219,16 +219,20 @@ public class App {
         }
     }
 
-    private void handlePublishGame(KafkaProducerService producer, String[] args) {
-        if (args.length < 3) {
-            System.out.println("Usage: publish-game [id] [name] [version]");
+    private void handlePublishGame(KafkaProducerService producer, GameRepository gameRepo, String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: publish-game [gameId]");
             return;
         }
         try {
             long id = Long.parseLong(args[0]);
-            String name = args[1];
-            String v = args[2];
-            producer.sendGamePublished(id, name, v);
+            gameRepo.findById(id).ifPresentOrElse(
+                    game -> {
+                        producer.sendGamePublished(game); // On envoie l'objet complet
+                        System.out.println("> Game '" + game.getName() + "' send to the Distributor.");
+                    },
+                    () -> System.out.println("> Error : No games found with the ID " + id)
+            );
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -255,10 +259,14 @@ public class App {
         System.out.println("=================================");
         System.out.println("\n[SYSTEM]");
         System.out.println("* Exit                exit/quit");
+        System.out.println("\n[KAFKA CONSUMER EVENTS]");
         System.out.println("* Start Listener      start [listenerId...]");
         System.out.println("* Stop Listener       stop [listenerId...]");
+        System.out.println("  -> IDs: " + KafkaConsumerService.EXAMPLE_EVENT_CONSUMER_BEAN_NAME);
+        System.out.println("  -> " + KafkaConsumerService.GAME_REVIEWED_CONSUMER_BEAN_NAME);
+        System.out.println("  -> " + KafkaConsumerService.CRASH_REPORTED_CONSUMER_BEAN_NAME);
         System.out.println("\n[KAFKA PRODUCER EVENTS]");
-        System.out.println("* Publish Game        publish-game [gameId] [name] [version]");
+        System.out.println("* Publish Game        publish-game [gameId]");
         System.out.println("* Publish Patch       publish-patch [gameId] [version]");
         System.out.println("* Send Payload        send [payload]");
         System.out.println("\n[DATABASE]");
@@ -268,5 +276,4 @@ public class App {
         System.out.println();
         System.out.print("> ");
     }
-
 }
