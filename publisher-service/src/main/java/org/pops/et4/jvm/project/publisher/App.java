@@ -1,5 +1,6 @@
 package org.pops.et4.jvm.project.publisher;
 
+import jakarta.transaction.Transactional;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaConsumerService;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaLifecycleService;
 import org.pops.et4.jvm.project.publisher.kafka.KafkaProducerService;
@@ -15,6 +16,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 
 @SpringBootApplication
@@ -144,78 +151,111 @@ public class App {
         };
     }
 
-    private void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo) {
-        String csvFile = "src/main/resources/vgsales.csv";
-        int count = 0;
-        // Ajout de la variable manquante pour la date de sortie
-        java.time.Instant now = java.time.Instant.now();
+    private static final String CSV_FILENAME = "mon_fichier_donnees.csv";
 
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(csvFile))) {
-            br.readLine(); // Ignorer le header
+    @Transactional
+    public void handleCsvImport(PublisherRepository pubRepo, GameRepository gameRepo) {
 
-            String line;
-            while ((line = br.readLine()) != null && count < 500) { // On peut monter à 500 pour un bon jeu de test
-                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(App.CSV_FILENAME);
 
-                if (data.length >= 6) {
-                    String gameName = data[1].replace("\"", "");
-                    String platformStr = data[2].toUpperCase();
-                    String genreStr = data[4].toUpperCase();
-                    String publisherName = data[5].replace("\"", "");
+        if (inputStream == null) {
+            throw new IllegalArgumentException("Le fichier " + App.CSV_FILENAME + " est introuvable dans les ressources.");
+        }
 
-                    // Mapping de l'Editeur
-                    Publisher publisher = pubRepo.findFirstByName(publisherName)
-                            .orElseGet(() -> pubRepo.save(Publisher.newBuilder()
-                                    .setName(publisherName)
-                                    .setIsCompany(true)
-                                    .build()));
+        try (var reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            long inserted = 0;
 
-                    // Mapping de la Plateforme (Sécurisé)
-                    Platform platform = mapPlatform(platformStr);
+            reader.lines()
+                    .skip(1)
+                    .filter(line -> line != null && !line.isBlank())
+                    .forEach(line -> {
+                        String[] data = line.split(",");
 
-                    // Mapping du Genre (Sécurisé)
-                    Genre genre = mapGenre(genreStr);
+                        if (data.length >= 6) {
+                            String gameName = data[0].replace("\"", "").trim();
+                            String platformStr = data[1].toUpperCase().trim();
+                            String genreStr = data[3].toUpperCase().trim();
+                            String publisherName = data[4].replace("\"", "").trim();
 
-                    // Création du Jeu (si ton schéma Game le permet)
-                    Game game = Game.newBuilder()
-                            .setName(gameName)
-                    .setPublisher(publisher)
-                    .setVersion("1.0.0")
-                    .setReleaseDate(now)
-                    .setPlatforms(List.of(platform))
-                    .setGenres(List.of(genre))
-                    .build();
+                            try {
+                                // Mapping de l'Editeur
+                                Publisher publisher = pubRepo.findFirstByName(publisherName)
+                                        .orElseGet(() -> pubRepo.save(Publisher.newBuilder()
+                                                .setId(null)
+                                                .setName(publisherName)
+                                                .setIsCompany(true)
+                                                .build()
+                                        ));
 
-                    gameRepo.save(game);
-                    count++;
-                }
-            }
-            System.out.println("> Import successfully completed!");
-        } catch (Exception e) {
-            System.err.println("> Error during import: " + e.getMessage());
+                                // Mapping de la Plateforme
+                                Platform platform = mapPlatform(platformStr);
+
+                                // Mapping du Genre
+                                Genre genre = mapGenre(genreStr);
+
+                                // Création du Jeu
+                                Game game = Game.newBuilder()
+                                        .setId(null)
+                                        .setName(gameName)
+                                        .setPublisher(publisher)
+                                        .setVersion("1.0.0")
+                                        .setReleaseDate(Instant.now())
+                                        .setPlatforms(List.of(platform))
+                                        .setGenres(List.of(genre))
+                                        .build();
+
+                                // Sauvegarde du jeu
+                                gameRepo.save(game);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
+
+            System.out.println("Import terminé depuis les ressources : " + inserted + " ajoutés.");
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur de lecture du fichier ressource", e);
+        } catch (NumberFormatException e) {
+            System.err.println("Erreur de format dans le CSV : " + e.getMessage());
         }
     }
 
     // --- MÉTHODES DE MAPPING (HELPER) ---
     private Platform mapPlatform(String csvPlatform) {
         try {
-            // Gérer les cas particuliers du CSV
-            if (csvPlatform.equals("WS")) return Platform.WINDOWS;
-            if (csvPlatform.equals("PC")) return Platform.WINDOWS;
-            if (csvPlatform.contains("PS4")) return Platform.PS4;
-            if (csvPlatform.contains("XONE")) return Platform.XBOX_ONE;
-
-            return Platform.valueOf(csvPlatform);
+            return switch (csvPlatform) {
+                case "WS", "PC" -> Platform.WINDOWS;
+                case "2600" -> Platform.ATARI2600;
+                case "SAT" -> Platform.SATURN;
+                case "3DS" -> Platform.NINTENDO_3DS;
+                case "WIIU" -> Platform.WII_U;
+                case "SNES" -> Platform.SUPER_NES;
+                case "DC" -> Platform.DREAM_CAST;
+                case "3DO" -> Platform.INTERACTIVE_3D0;
+                case "XB" -> Platform.XBOX;
+                case "GB" -> Platform.GAME_BOY;
+                case "GBA" -> Platform.GAME_BOY_ADVANCED;
+                case "GC" -> Platform.GAME_CUBE;
+                case "GEN" -> Platform.GENESIS;
+                case "GG" -> Platform.GAME_GEAR;
+                case "NG" -> Platform.NEO_GEO;
+                case "SCD" -> Platform.SEGA_CD;
+                case "TG16" -> Platform.TURBO_GRAF;
+                default -> Platform.valueOf(csvPlatform);
+            };
         } catch (IllegalArgumentException e) {
-            return Platform.WINDOWS; // Valeur par défaut si inconnu
+            return Platform.UNKNOWN; // Valeur par défaut si inconnu
         }
     }
 
     private Genre mapGenre(String csvGenre) {
         try {
-            return Genre.valueOf(csvGenre);
+            return switch (csvGenre) {
+                case "ROLE-PLAYING" -> Genre.RPG;
+                default -> Genre.valueOf(csvGenre);
+            };
         } catch (IllegalArgumentException e) {
-            return Genre.ACTION; // Valeur par défaut
+            return Genre.UNKNOWN; // Valeur par défaut
         }
     }
 
