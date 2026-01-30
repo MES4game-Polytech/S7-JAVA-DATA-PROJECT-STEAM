@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -112,11 +113,17 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendGameReviewed(Long reviewId) {
+    public void sendGameReviewed(Long reviewId, Long distributorId, Integer rating, String comment, Instant publicationDate, java.util.List<Long> positiveReactionPlayerIds, java.util.List<Long> negativeReactionPlayerIds) {
         String topic = GameReviewed.TOPIC;
         String key = UUID.randomUUID().toString();
         GameReviewed event = GameReviewed.newBuilder()
                 .setReviewId(reviewId)
+                .setDistributorId(distributorId)
+                .setRating(rating)
+                .setComment(comment)
+                .setPublicationDate(publicationDate)
+                .setPositiveReactionPlayerIds(positiveReactionPlayerIds)
+                .setNegativeReactionPlayerIds(negativeReactionPlayerIds)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);

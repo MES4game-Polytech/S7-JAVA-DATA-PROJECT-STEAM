@@ -74,7 +74,7 @@ public class DistributorService {
 
     /**
      * Processes a game review submitted by a player.
-     * Validates that the player has at least 5 hours of playtime before accepting the review.
+     * Validates that the player has at least 15 seconds of playtime before accepting the review.
      * @param event The ReviewGame event containing review information
      * @return The saved Review entity with its generated ID, or null if review is refused
      */
@@ -83,13 +83,13 @@ public class DistributorService {
         Player player = playerRepository.findById(event.getPlayerId())
                 .orElseThrow(() -> new RuntimeException("Player not found: " + event.getPlayerId()));
 
-        // Check if player owns the game and has sufficient playtime (minimum 5 hours = 300 minutes)
+        // Check if player owns the game and has sufficient playtime (minimum 15 seconds = 0.25 minutes)
         OwnedGame ownedGame = ownedGameRepository.findByPlayerIdAndGameId(event.getPlayerId(), event.getGameId())
                 .orElse(null);
 
-        if (ownedGame == null || ownedGame.getPlayTime() < 300) {
-            // Review refused - player doesn't own the game or has less than 5 hours playtime
-            throw new IllegalStateException("Review refused: Player must have at least 5 hours of playtime on the game");
+        if (ownedGame == null || ownedGame.getPlayTime() < 0.25) {
+            // Review refused - player doesn't own the game or has less than 15 seconds playtime
+            throw new IllegalStateException("Review refused: Player must have at least 15 seconds of playtime on the game");
         }
 
         Review review = Review.newBuilder()

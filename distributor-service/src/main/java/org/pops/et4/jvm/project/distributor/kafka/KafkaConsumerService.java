@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service(KafkaConsumerService.BEAN_NAME)
 public class KafkaConsumerService {
@@ -195,7 +196,29 @@ public class KafkaConsumerService {
         // If review is refused (insufficient playtime), send review-refused event instead
         try {
             Review savedReview = distributorService.reviewGame(event);
-            producerService.sendGameReviewed(savedReview.getId());
+            
+            // Extract player IDs from positive and negative reactions
+            List<Long> positiveReactionIds = savedReview.getPositiveReactions() != null 
+                ? savedReview.getPositiveReactions().stream()
+                    .map(player -> player.getId())
+                    .collect(Collectors.toList())
+                : new ArrayList<>();
+            
+            List<Long> negativeReactionIds = savedReview.getNegativeReactions() != null 
+                ? savedReview.getNegativeReactions().stream()
+                    .map(player -> player.getId())
+                    .collect(Collectors.toList())
+                : new ArrayList<>();
+            
+            producerService.sendGameReviewed(
+                savedReview.getId(),
+                savedReview.getPlayer().getDistributor().getId(),
+                savedReview.getRating(),
+                savedReview.getComment(),
+                savedReview.getPublicationDate(),
+                positiveReactionIds,
+                negativeReactionIds
+            );
         } catch (IllegalStateException e) {
             // Review refused - send ReviewRefused event
             // We need to create a review with ID first to get the reviewId
