@@ -52,7 +52,7 @@ public class KafkaProducerService {
     }
 
     public void sendGameDistributed(Long distributorId, Long gameId, String gameName) {
-        String topic = "game-distributed";
+        String topic = GameDistributed.TOPIC;
         String key = UUID.randomUUID().toString();
         GameDistributed event = GameDistributed.newBuilder()
                 .setDistributorId(distributorId)
@@ -66,7 +66,7 @@ public class KafkaProducerService {
     }
 
     public void sendPatchDistributed(Long distributorId, Long gameId, String newVersion, String gameName) {
-        String topic = "patch-distributed";
+        String topic = PatchDistributed.TOPIC;
         String key = UUID.randomUUID().toString();
         PatchDistributed event = PatchDistributed.newBuilder()
                 .setDistributorId(distributorId)
@@ -81,7 +81,7 @@ public class KafkaProducerService {
     }
 
     public void sendSaleStarted(Long distributorId, Long gameId, Float salePercentage, String gameName) {
-        String topic = "sale-started";
+        String topic = SaleStarted.TOPIC;
         String key = UUID.randomUUID().toString();
         SaleStarted event = SaleStarted.newBuilder()
                 .setDistributorId(distributorId)
@@ -96,7 +96,7 @@ public class KafkaProducerService {
     }
 
     public void sendSendGameFile(Long targetId, Long gameId, String version, String gameName, String platform, String playerName) {
-        String topic = "send-game-file";
+        String topic = SendGameFile.TOPIC;
         String key = UUID.randomUUID().toString();
         SendGameFile event = SendGameFile.newBuilder()
                 .setTargetId(targetId)
@@ -113,7 +113,7 @@ public class KafkaProducerService {
     }
 
     public void sendGameReviewed(Long reviewId) {
-        String topic = "game-reviewed";
+        String topic = GameReviewed.TOPIC;
         String key = UUID.randomUUID().toString();
         GameReviewed event = GameReviewed.newBuilder()
                 .setReviewId(reviewId)
@@ -125,7 +125,7 @@ public class KafkaProducerService {
     }
 
     public void sendReviewRefused(Long reviewId, String playerName, String gameName) {
-        String topic = "review-refused";
+        String topic = ReviewRefused.TOPIC;
         String key = UUID.randomUUID().toString();
         ReviewRefused event = ReviewRefused.newBuilder()
                 .setReviewId(reviewId)
@@ -139,7 +139,7 @@ public class KafkaProducerService {
     }
 
     public void sendCrashReported(Long distributorId, Long gameId, Platform platform, String installedVersion, Integer errorCode, String message) {
-        String topic = "crash-reported";
+        String topic = CrashReported.TOPIC;
         String key = UUID.randomUUID().toString();
         CrashReported event = CrashReported.newBuilder()
                 .setDistributorId(distributorId)
@@ -148,6 +148,18 @@ public class KafkaProducerService {
                 .setInstalledVersion(installedVersion)
                 .setErrorCode(errorCode)
                 .setMessage(message)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendSendPlayerPage(String page) {
+        String topic = SendPlayerPage.TOPIC;
+        String key = UUID.randomUUID().toString();
+        SendPlayerPage event = SendPlayerPage.newBuilder()
+                .setPage(page)
                 .build();
 
         CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);

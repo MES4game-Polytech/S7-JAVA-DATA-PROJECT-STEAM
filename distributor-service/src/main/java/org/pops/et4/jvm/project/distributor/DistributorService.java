@@ -413,4 +413,53 @@ public class DistributorService {
                 .orElseThrow(() -> new RuntimeException("Game not found in distributor catalog: " + gameId));
         return game.getGameName();
     }
+
+    /**
+     * Generates a formatted player page for the distributor.
+     * @param distributorId ID of the distributor
+     * @return Formatted player page as string
+     */
+    public String generatePlayerPage(Long distributorId) {
+        // Find all players for this distributor
+        java.util.List<Player> players = playerRepository.findAll().stream()
+                .filter(p -> p.getDistributor() != null && p.getDistributor().getId().equals(distributorId))
+                .toList();
+        
+        if (players.isEmpty()) {
+            return "No players registered with this distributor.";
+        }
+        
+        StringBuilder page = new StringBuilder();
+        page.append("=================================\n");
+        page.append("      PLAYERS DIRECTORY\n");
+        page.append("=================================\n\n");
+        
+        for (Player player : players) {
+            page.append("Player ID: ").append(player.getId()).append("\n");
+            page.append("Name: ").append(player.getFirstName()).append(" ").append(player.getLastName()).append("\n");
+            page.append("Pseudo: ").append(player.getPseudo()).append("\n");
+            page.append("Registration Date: ").append(player.getRegistrationDate()).append("\n");
+            
+            // Get owned games count
+            long ownedGamesCount = ownedGameRepository.findAll().stream()
+                    .filter(og -> og.getPlayer().getId().equals(player.getId()))
+                    .count();
+            page.append("Owned Games: ").append(ownedGamesCount).append("\n");
+            
+            // Get total playtime
+            int totalPlaytime = ownedGameRepository.findAll().stream()
+                    .filter(og -> og.getPlayer().getId().equals(player.getId()))
+                    .mapToInt(og -> og.getPlayTime())
+                    .sum();
+            page.append("Total Playtime: ").append(totalPlaytime).append(" minutes\n");
+            
+            // Get wishlist count
+            int wishlistCount = player.getWishedGames() != null ? player.getWishedGames().size() : 0;
+            page.append("Wishlist: ").append(wishlistCount).append(" games\n");
+            
+            page.append("---------------------------------\n");
+        }
+        
+        return page.toString();
+    }
 }

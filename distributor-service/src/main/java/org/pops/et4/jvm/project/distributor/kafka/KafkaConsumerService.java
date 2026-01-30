@@ -24,6 +24,20 @@ public class KafkaConsumerService {
     public static final String BEAN_NAME = "distributorServiceKafkaConsumerService";
 
     public static final String EXAMPLE_EVENT_CONSUMER_BEAN_NAME = "distributorServiceExampleEventConsumer";
+    public static final String GAME_PUBLISHED_CONSUMER_BEAN_NAME = "distributorServiceGamePublishedConsumer";
+    public static final String PATCH_PUBLISHED_CONSUMER_BEAN_NAME = "distributorServicePatchPublishedConsumer";
+    public static final String REGISTER_PLAYER_CONSUMER_BEAN_NAME = "distributorServiceRegisterPlayerConsumer";
+    public static final String PURCHASE_GAME_CONSUMER_BEAN_NAME = "distributorServicePurchaseGameConsumer";
+    public static final String REVIEW_GAME_CONSUMER_BEAN_NAME = "distributorServiceReviewGameConsumer";
+    public static final String REACT_REVIEW_CONSUMER_BEAN_NAME = "distributorServiceReactReviewConsumer";
+    public static final String INSTALL_GAME_CONSUMER_BEAN_NAME = "distributorServiceInstallGameConsumer";
+    public static final String UPDATE_GAME_CONSUMER_BEAN_NAME = "distributorServiceUpdateGameConsumer";
+    public static final String UNINSTALL_GAME_CONSUMER_BEAN_NAME = "distributorServiceUninstallGameConsumer";
+    public static final String ADD_PLAY_TIME_CONSUMER_BEAN_NAME = "distributorServiceAddPlayTimeConsumer";
+    public static final String REPORT_CRASH_CONSUMER_BEAN_NAME = "distributorServiceReportCrashConsumer";
+    public static final String ADD_WISHED_GAME_CONSUMER_BEAN_NAME = "distributorServiceAddWishedGameConsumer";
+    public static final String REMOVE_WISHED_GAME_CONSUMER_BEAN_NAME = "distributorServiceRemoveWishedGameConsumer";
+    public static final String ASK_PLAYER_PAGE_CONSUMER_BEAN_NAME = "distributorServiceAskPlayerPageConsumer";
 
     private final KafkaProducerService producerService;
     private final DistributorService distributorService;
@@ -95,9 +109,9 @@ public class KafkaConsumerService {
     */
 
     @KafkaListener(
-            id = "gamePublishedConsumer",
+            id = KafkaConsumerService.GAME_PUBLISHED_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "game-published",
+            topics = GamePublished.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -110,13 +124,13 @@ public class KafkaConsumerService {
         String gameName = distributorService.getGameName(event.getGameId());
         producerService.sendGameDistributed(distributedGame.getDistributor().getId(), event.getGameId(), gameName);
         
-        System.out.println("[Consumer] game-published(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + GamePublished.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "patchPublishedConsumer",
+            id = KafkaConsumerService.PATCH_PUBLISHED_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "patch-published",
+            topics = PatchPublished.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -129,13 +143,13 @@ public class KafkaConsumerService {
         String gameName = distributorService.getGameName(event.getGameId());
         producerService.sendPatchDistributed(distributedGame.getDistributor().getId(), event.getGameId(), event.getVersion(), gameName);
         
-        System.out.println("[Consumer] patch-published(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + PatchPublished.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "registerPlayerConsumer",
+            id = KafkaConsumerService.REGISTER_PLAYER_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "register-player",
+            topics = RegisterPlayer.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -146,13 +160,13 @@ public class KafkaConsumerService {
         // Business logic: Register the player in distributor's database
         distributorService.registerPlayer(event);
         
-        System.out.println("[Consumer] register-player(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + RegisterPlayer.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "purchaseGameConsumer",
+            id = KafkaConsumerService.PURCHASE_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "purchase-game",
+            topics = PurchaseGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -163,13 +177,13 @@ public class KafkaConsumerService {
         // Business logic: Create OwnedGame entry when player purchases a game
         distributorService.purchaseGame(event);
         
-        System.out.println("[Consumer] purchase-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + PurchaseGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "reviewGameConsumer",
+            id = KafkaConsumerService.REVIEW_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "review-game",
+            topics = ReviewGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -189,16 +203,16 @@ public class KafkaConsumerService {
             String playerName = distributorService.getPlayerName(event.getPlayerId());
             String gameName = distributorService.getGameName(event.getGameId());
             producerService.sendReviewRefused(0L, playerName, gameName); // Using 0 as placeholder since review wasn't created
-            System.out.println("[Consumer] review-game(" + record.key() + "): REFUSED - " + e.getMessage());
+            System.out.println("[Consumer] " + ReviewGame.TOPIC + "(" + record.key() + "): REFUSED - " + e.getMessage());
         }
         
-        System.out.println("[Consumer] review-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + ReviewGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "reactReviewConsumer",
+            id = KafkaConsumerService.REACT_REVIEW_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "react-review",
+            topics = ReactReview.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -209,13 +223,13 @@ public class KafkaConsumerService {
         // Business logic: Add or remove reaction to a review
         distributorService.reactReview(event);
         
-        System.out.println("[Consumer] react-review(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + ReactReview.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "installGameConsumer",
+            id = KafkaConsumerService.INSTALL_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "install-game",
+            topics = InstallGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -231,16 +245,16 @@ public class KafkaConsumerService {
             String platform = event.getPlatform().toString();
             producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion(), gameName, platform, playerName);
         } catch (IllegalStateException e) {
-            System.out.println("[Consumer] install-game(" + record.key() + "): REFUSED - " + e.getMessage());
+            System.out.println("[Consumer] " + InstallGame.TOPIC + "(" + record.key() + "): REFUSED - " + e.getMessage());
         }
         
-        System.out.println("[Consumer] install-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + InstallGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "updateGameConsumer",
+            id = KafkaConsumerService.UPDATE_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "update-game",
+            topics = UpdateGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -256,16 +270,16 @@ public class KafkaConsumerService {
             String platform = event.getPlatform().toString();
             producerService.sendSendGameFile(event.getPlayerId(), event.getGameId(), game.getVersion(), gameName, platform, playerName);
         } catch (IllegalStateException e) {
-            System.out.println("[Consumer] update-game(" + record.key() + "): REFUSED - " + e.getMessage());
+            System.out.println("[Consumer] " + UpdateGame.TOPIC + "(" + record.key() + "): REFUSED - " + e.getMessage());
         }
         
-        System.out.println("[Consumer] update-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + UpdateGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "uninstallGameConsumer",
+            id = KafkaConsumerService.UNINSTALL_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "uninstall-game",
+            topics = UninstallGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -276,13 +290,13 @@ public class KafkaConsumerService {
         // Log the uninstallation event for tracking purposes
         System.out.println("[Consumer] Player " + event.getPlayerId() + " uninstalled game " + event.getGameId() + " from platform " + event.getPlatform());
         
-        System.out.println("[Consumer] uninstall-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + UninstallGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "addPlayTimeConsumer",
+            id = KafkaConsumerService.ADD_PLAY_TIME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "add-play-time",
+            topics = AddPlayTime.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -293,13 +307,13 @@ public class KafkaConsumerService {
         // Business logic: Update playtime in OwnedGame
         distributorService.addPlayTime(event);
         
-        System.out.println("[Consumer] add-play-time(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + AddPlayTime.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "reportCrashConsumer",
+            id = KafkaConsumerService.REPORT_CRASH_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "report-crash",
+            topics = ReportCrash.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -323,13 +337,13 @@ public class KafkaConsumerService {
                 event.getMessage().toString()
         );
         
-        System.out.println("[Consumer] report-crash(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + ReportCrash.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "addWishedGameConsumer",
+            id = KafkaConsumerService.ADD_WISHED_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "add-wished-game",
+            topics = AddWishedGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -340,13 +354,13 @@ public class KafkaConsumerService {
         // Business logic: Add game to player's wishlist
         distributorService.addWishedGame(event);
         
-        System.out.println("[Consumer] add-wished-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + AddWishedGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
     @KafkaListener(
-            id = "removeWishedGameConsumer",
+            id = KafkaConsumerService.REMOVE_WISHED_GAME_CONSUMER_BEAN_NAME,
             containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
-            topics = "remove-wished-game",
+            topics = RemoveWishedGame.TOPIC,
             groupId = "${spring.kafka.consumer.group-id}"
     )
     @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
@@ -357,7 +371,24 @@ public class KafkaConsumerService {
         // Business logic: Remove game from player's wishlist
         distributorService.removeWishedGame(event);
         
-        System.out.println("[Consumer] remove-wished-game(" + record.key() + "): FINISHED");
+        System.out.println("[Consumer] " + RemoveWishedGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
-}
+    @KafkaListener(
+            id = KafkaConsumerService.ASK_PLAYER_PAGE_CONSUMER_BEAN_NAME,
+            containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
+            topics = AskPlayerPage.TOPIC,
+            groupId = "${spring.kafka.consumer.group-id}"
+    )
+    @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
+    public void consumeAskPlayerPage(ConsumerRecord<String, AskPlayerPage> record) {
+        this.logs.add(new ConsumeLog<>("askPlayerPageConsumer", Instant.now(), record.key(), record.value()));
+        AskPlayerPage event = record.value();
+        
+        // Business logic: Generate and send player page
+        String playerPage = distributorService.generatePlayerPage(event.getDistributorId());
+        producerService.sendSendPlayerPage(playerPage);
+        
+        System.out.println("[Consumer] " + AskPlayerPage.TOPIC + "(" + record.key() + "): FINISHED");
+    }
+

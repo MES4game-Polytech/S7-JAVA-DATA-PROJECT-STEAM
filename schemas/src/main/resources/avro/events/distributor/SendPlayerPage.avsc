@@ -1,0 +1,13 @@
+{
+    "name": "SendPlayerPage",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Sends the player's profile page as formatted text",
+    "type": "record",
+    "fields": [
+        {
+            "name": "page",
+            "doc": "Formatted player page content as string",
+            "type": "string"
+        }
+    ]
+}
