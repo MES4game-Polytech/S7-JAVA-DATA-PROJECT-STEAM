@@ -43,13 +43,6 @@ public class App {
         return ignored -> {
             Thread.sleep(1000);
 
-            // --- AUTOMATISATION DE L'IMPORT AU DÉMARRAGE ---
-            System.out.println("> Checking database status...");
-            long currentPubCount = publisherRepository.count();
-            System.out.println("> Current database state: " + currentPubCount + " publishers found.");
-            System.out.println("> Synchronizing with vgsales.csv...");
-            handleCsvImport(publisherRepository, gameRepository);
-
             try (Scanner scanner = new Scanner(System.in)) {
                 boolean running = true;
 
