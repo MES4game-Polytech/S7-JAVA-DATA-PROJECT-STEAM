@@ -118,12 +118,12 @@ public class KafkaConsumerService {
     public void consumeGamePublished(ConsumerRecord<String, GamePublished> record) {
         this.logs.add(new ConsumeLog<>("gamePublishedConsumer", Instant.now(), record.key(), record.value()));
         GamePublished event = record.value();
-        
+
         // Business logic: Create DistributedGame and send game-distributed event
         var distributedGame = distributorService.gamePublished(event);
         String gameName = distributorService.getGameName(event.getGameId());
         producerService.sendGameDistributed(distributedGame.getDistributor().getId(), event.getGameId(), gameName);
-        
+
         System.out.println("[Consumer] " + GamePublished.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -137,12 +137,12 @@ public class KafkaConsumerService {
     public void consumePatchPublished(ConsumerRecord<String, PatchPublished> record) {
         this.logs.add(new ConsumeLog<>("patchPublishedConsumer", Instant.now(), record.key(), record.value()));
         PatchPublished event = record.value();
-        
+
         // Business logic: Update DistributedGame version and send patch-distributed event
         var distributedGame = distributorService.patchPublished(event);
         String gameName = distributorService.getGameName(event.getGameId());
         producerService.sendPatchDistributed(distributedGame.getDistributor().getId(), event.getGameId(), event.getVersion(), gameName);
-        
+
         System.out.println("[Consumer] " + PatchPublished.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -156,10 +156,10 @@ public class KafkaConsumerService {
     public void consumeRegisterPlayer(ConsumerRecord<String, RegisterPlayer> record) {
         this.logs.add(new ConsumeLog<>("registerPlayerConsumer", Instant.now(), record.key(), record.value()));
         RegisterPlayer event = record.value();
-        
+
         // Business logic: Register the player in distributor's database
         distributorService.registerPlayer(event);
-        
+
         System.out.println("[Consumer] " + RegisterPlayer.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -173,10 +173,10 @@ public class KafkaConsumerService {
     public void consumePurchaseGame(ConsumerRecord<String, PurchaseGame> record) {
         this.logs.add(new ConsumeLog<>("purchaseGameConsumer", Instant.now(), record.key(), record.value()));
         PurchaseGame event = record.value();
-        
+
         // Business logic: Create OwnedGame entry when player purchases a game
         distributorService.purchaseGame(event);
-        
+
         System.out.println("[Consumer] " + PurchaseGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -190,7 +190,7 @@ public class KafkaConsumerService {
     public void consumeReviewGame(ConsumerRecord<String, ReviewGame> record) {
         this.logs.add(new ConsumeLog<>("reviewGameConsumer", Instant.now(), record.key(), record.value()));
         ReviewGame event = record.value();
-        
+
         // Business logic: Save review in database and send game-reviewed event
         // If review is refused (insufficient playtime), send review-refused event instead
         try {
@@ -205,7 +205,7 @@ public class KafkaConsumerService {
             producerService.sendReviewRefused(0L, playerName, gameName); // Using 0 as placeholder since review wasn't created
             System.out.println("[Consumer] " + ReviewGame.TOPIC + "(" + record.key() + "): REFUSED - " + e.getMessage());
         }
-        
+
         System.out.println("[Consumer] " + ReviewGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -219,10 +219,10 @@ public class KafkaConsumerService {
     public void consumeReactReview(ConsumerRecord<String, ReactReview> record) {
         this.logs.add(new ConsumeLog<>("reactReviewConsumer", Instant.now(), record.key(), record.value()));
         ReactReview event = record.value();
-        
+
         // Business logic: Add or remove reaction to a review
         distributorService.reactReview(event);
-        
+
         System.out.println("[Consumer] " + ReactReview.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -236,7 +236,7 @@ public class KafkaConsumerService {
     public void consumeInstallGame(ConsumerRecord<String, InstallGame> record) {
         this.logs.add(new ConsumeLog<>("installGameConsumer", Instant.now(), record.key(), record.value()));
         InstallGame event = record.value();
-        
+
         // Business logic: Verify player owns game, then send game files
         try {
             DistributedGame game = distributorService.processInstallGame(event.getPlayerId(), event.getGameId());
@@ -247,7 +247,7 @@ public class KafkaConsumerService {
         } catch (IllegalStateException e) {
             System.out.println("[Consumer] " + InstallGame.TOPIC + "(" + record.key() + "): REFUSED - " + e.getMessage());
         }
-        
+
         System.out.println("[Consumer] " + InstallGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -261,7 +261,7 @@ public class KafkaConsumerService {
     public void consumeUpdateGame(ConsumerRecord<String, UpdateGame> record) {
         this.logs.add(new ConsumeLog<>("updateGameConsumer", Instant.now(), record.key(), record.value()));
         UpdateGame event = record.value();
-        
+
         // Business logic: Verify player owns game and check if update is needed, then send updated game files
         try {
             DistributedGame game = distributorService.processUpdateGame(event.getPlayerId(), event.getGameId(), event.getInstalledVersion().toString());
@@ -272,7 +272,7 @@ public class KafkaConsumerService {
         } catch (IllegalStateException e) {
             System.out.println("[Consumer] " + UpdateGame.TOPIC + "(" + record.key() + "): REFUSED - " + e.getMessage());
         }
-        
+
         System.out.println("[Consumer] " + UpdateGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -286,10 +286,10 @@ public class KafkaConsumerService {
     public void consumeUninstallGame(ConsumerRecord<String, UninstallGame> record) {
         this.logs.add(new ConsumeLog<>("uninstallGameConsumer", Instant.now(), record.key(), record.value()));
         UninstallGame event = record.value();
-        
+
         // Log the uninstallation event for tracking purposes
         System.out.println("[Consumer] Player " + event.getPlayerId() + " uninstalled game " + event.getGameId() + " from platform " + event.getPlatform());
-        
+
         System.out.println("[Consumer] " + UninstallGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -303,10 +303,10 @@ public class KafkaConsumerService {
     public void consumeAddPlayTime(ConsumerRecord<String, AddPlayTime> record) {
         this.logs.add(new ConsumeLog<>("addPlayTimeConsumer", Instant.now(), record.key(), record.value()));
         AddPlayTime event = record.value();
-        
+
         // Business logic: Update playtime in OwnedGame
         distributorService.addPlayTime(event);
-        
+
         System.out.println("[Consumer] " + AddPlayTime.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -320,14 +320,14 @@ public class KafkaConsumerService {
     public void consumeReportCrash(ConsumerRecord<String, ReportCrash> record) {
         this.logs.add(new ConsumeLog<>("reportCrashConsumer", Instant.now(), record.key(), record.value()));
         ReportCrash event = record.value();
-        
+
         // Business logic: Process crash report and notify via crash-reported event
         Long distributorId = distributorService.processCrashReport(event);
-        
+
         // Convert platform string to Platform enum
-        org.pops.et4.jvm.project.schemas.events.Platform platformEnum = 
-            org.pops.et4.jvm.project.schemas.events.Platform.valueOf(event.getPlatform().toString());
-        
+        org.pops.et4.jvm.project.schemas.events.Platform platformEnum =
+                org.pops.et4.jvm.project.schemas.events.Platform.valueOf(event.getPlatform().toString());
+
         producerService.sendCrashReported(
                 distributorId,
                 event.getGameId(),
@@ -336,7 +336,7 @@ public class KafkaConsumerService {
                 (int) event.getErrorCode(),
                 event.getMessage().toString()
         );
-        
+
         System.out.println("[Consumer] " + ReportCrash.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -350,10 +350,10 @@ public class KafkaConsumerService {
     public void consumeAddWishedGame(ConsumerRecord<String, AddWishedGame> record) {
         this.logs.add(new ConsumeLog<>("addWishedGameConsumer", Instant.now(), record.key(), record.value()));
         AddWishedGame event = record.value();
-        
+
         // Business logic: Add game to player's wishlist
         distributorService.addWishedGame(event);
-        
+
         System.out.println("[Consumer] " + AddWishedGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -367,10 +367,10 @@ public class KafkaConsumerService {
     public void consumeRemoveWishedGame(ConsumerRecord<String, RemoveWishedGame> record) {
         this.logs.add(new ConsumeLog<>("removeWishedGameConsumer", Instant.now(), record.key(), record.value()));
         RemoveWishedGame event = record.value();
-        
+
         // Business logic: Remove game from player's wishlist
         distributorService.removeWishedGame(event);
-        
+
         System.out.println("[Consumer] " + RemoveWishedGame.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -384,11 +384,12 @@ public class KafkaConsumerService {
     public void consumeAskPlayerPage(ConsumerRecord<String, AskPlayerPage> record) {
         this.logs.add(new ConsumeLog<>("askPlayerPageConsumer", Instant.now(), record.key(), record.value()));
         AskPlayerPage event = record.value();
-        
+
         // Business logic: Generate and send player page
         String playerPage = distributorService.generatePlayerPage(event.getDistributorId());
         producerService.sendSendPlayerPage(playerPage);
-        
+
         System.out.println("[Consumer] " + AskPlayerPage.TOPIC + "(" + record.key() + "): FINISHED");
     }
+}
 
