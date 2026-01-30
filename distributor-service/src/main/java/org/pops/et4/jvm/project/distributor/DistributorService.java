@@ -20,7 +20,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 @Service(DistributorService.BEAN_NAME)
 public class DistributorService {
@@ -108,52 +110,67 @@ public class DistributorService {
 
     /**
      * Processes a game published by a publisher.
-     * Creates a DistributedGame in the distributor's database.
+     * Creates a DistributedGame for ALL distributors in the database.
      * @param event The GamePublished event containing game information
-     * @return The saved DistributedGame entity with its generated ID
+     * @return List of saved DistributedGame entities (one per distributor)
      */
-    public DistributedGame gamePublished(GamePublished event) {
-        // Fetch the current distributor (the one running this service)
-        Distributor distributor = distributorRepository.findAll().stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No distributor found in database"));
+    public List<DistributedGame> gamePublished(GamePublished event) {
+        // Fetch ALL distributors and create a DistributedGame for each
+        List<Distributor> distributors = distributorRepository.findAll();
+        
+        if (distributors.isEmpty()) {
+            throw new RuntimeException("No distributors found in database");
+        }
 
-        DistributedGame distributedGame = DistributedGame.newBuilder()
-                .setId(null)
-                .setDistributor(distributor)
-                .setGameId(event.getGameId())
-                .setGameName(event.getGameName())
-                .setVersion(event.getVersion())
-                .setPrice(59.99f) // Default price set by distributor
-                .setSale(null)
-                .build();
+        List<DistributedGame> distributedGames = new ArrayList<>();
+        
+        for (Distributor distributor : distributors) {
+            DistributedGame distributedGame = DistributedGame.newBuilder()
+                    .setId(null)
+                    .setDistributor(distributor)
+                    .setGameId(event.getGameId())
+                    .setGameName(event.getGameName())
+                    .setVersion(event.getVersion())
+                    .setPrice(59.99f) // Default price set by distributor
+                    .setSale(null)
+                    .build();
 
-        return distributedGameRepository.save(distributedGame);
+            distributedGames.add(distributedGameRepository.save(distributedGame));
+        }
+
+        return distributedGames;
     }
 
     /**
      * Processes a patch published by a publisher.
-     * Updates the version of an existing DistributedGame.
+     * Updates the version of an existing DistributedGame for ALL distributors.
      * @param event The PatchPublished event containing patch information
-     * @return The updated DistributedGame entity
+     * @return List of updated DistributedGame entities (one per distributor)
      */
-    public DistributedGame patchPublished(PatchPublished event) {
-        // Fetch the current distributor (the one running this service)
-        Distributor distributor = distributorRepository.findAll().stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No distributor found in database"));
+    public List<DistributedGame> patchPublished(PatchPublished event) {
+        // Fetch ALL distributors
+        List<Distributor> distributors = distributorRepository.findAll();
+        
+        if (distributors.isEmpty()) {
+            throw new RuntimeException("No distributors found in database");
+        }
 
-        // Find the DistributedGame by distributor and gameId
-        DistributedGame distributedGame = distributedGameRepository.findByDistributorIdAndGameId(distributor.getId(), event.getGameId())
-                .orElseThrow(() -> new RuntimeException("DistributedGame not found for distributor: " + 
-                                                       distributor.getId() + " and game: " + event.getGameId()));
+        List<DistributedGame> updatedGames = new ArrayList<>();
+        
+        for (Distributor distributor : distributors) {
+            // Find the DistributedGame by distributor and gameId
+            distributedGameRepository.findByDistributorIdAndGameId(distributor.getId(), event.getGameId())
+                    .ifPresent(distributedGame -> {
+                        // Update the version
+                        DistributedGame updatedGame = DistributedGame.newBuilder(distributedGame)
+                                .setVersion(event.getVersion())
+                                .build();
 
-        // Update the version
-        DistributedGame updatedGame = DistributedGame.newBuilder(distributedGame)
-                .setVersion(event.getVersion())
-                .build();
+                        updatedGames.add(distributedGameRepository.save(updatedGame));
+                    });
+        }
 
-        return distributedGameRepository.save(updatedGame);
+        return updatedGames;
     }
 
     /**
@@ -462,4 +479,106 @@ public class DistributorService {
         
         return page.toString();
     }
+
+    /**
+     * Generates a JSON string containing all available games for a given platform from a distributor.
+     * @param distributorId The distributor ID
+     * @param platform The platform to filter games
+     * @return JSON string with games information
+     */
+    public String buildGamesPage(Long distributorId, Platform platform) {
+        // Verify distributor exists
+        Distributor distributor = distributorRepository.findById(distributorId)
+                .orElseThrow(() -> new RuntimeException("Distributor not found: " + distributorId));
+
+        // Get all distributed games for this distributor and platform
+        List<DistributedGame> games = distributedGameRepository.findAll().stream()
+                .filter(game -> game.getDistributor().getId().equals(distributorId))
+                .toList();
+
+        StringBuilder page = new StringBuilder();
+        page.append("=================================\n");
+        page.append("   AVAILABLE GAMES - ").append(platform).append("\n");
+        page.append("   Distributor: ").append(distributor.getName()).append("\n");
+        page.append("=================================\n\n");
+
+        if (games.isEmpty()) {
+            page.append("No games available for this platform.\n");
+        } else {
+            for (DistributedGame game : games) {
+                page.append("Game ID: ").append(game.getGameId()).append("\n");
+                page.append("Name: ").append(game.getGameName()).append("\n");
+                page.append("Version: ").append(game.getVersion()).append("\n");
+                page.append("Price: $").append(game.getPrice()).append("\n");
+                
+                if (game.getSale() != null) {
+                    float discountedPrice = game.getPrice() * (1 - game.getSale());
+                    page.append("SALE! ").append((int)(game.getSale() * 100)).append("% OFF - ");
+                    page.append("Now: $").append(String.format("%.2f", discountedPrice)).append("\n");
+                }
+                
+                page.append("---------------------------------\n");
+            }
+        }
+
+        return page.toString();
+    }
+
+    /**
+     * Generates a JSON string containing all reviews for a specific game from a distributor.
+     * @param distributorId The distributor ID
+     * @param gameId The game ID
+     * @return JSON string with reviews information
+     */
+    public String buildGameReviewsPage(Long distributorId, Long gameId) {
+        // Verify distributor exists
+        Distributor distributor = distributorRepository.findById(distributorId)
+                .orElseThrow(() -> new RuntimeException("Distributor not found: " + distributorId));
+
+        // Get the game
+        DistributedGame game = distributedGameRepository.findByDistributorIdAndGameId(distributorId, gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found for distributor " + distributorId + " and game " + gameId));
+
+        // Get all reviews for this game
+        List<Review> reviews = reviewRepository.findAll().stream()
+                .filter(review -> review.getGameId().equals(gameId))
+                .toList();
+
+        StringBuilder page = new StringBuilder();
+        page.append("=================================\n");
+        page.append("   GAME REVIEWS\n");
+        page.append("   Game: ").append(game.getGameName()).append("\n");
+        page.append("   Distributor: ").append(distributor.getName()).append("\n");
+        page.append("=================================\n\n");
+
+        if (reviews.isEmpty()) {
+            page.append("No reviews yet for this game.\n");
+        } else {
+            page.append("Total Reviews: ").append(reviews.size()).append("\n");
+            
+            // Calculate average rating
+            double avgRating = reviews.stream()
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+            page.append("Average Rating: ").append(String.format("%.1f", avgRating)).append("/10\n\n");
+
+            for (Review review : reviews) {
+                page.append("Review ID: ").append(review.getId()).append("\n");
+                page.append("Rating: ").append(review.getRating()).append("/10\n");
+                page.append("Comment: ").append(review.getComment()).append("\n");
+                page.append("Date: ").append(review.getPublicationDate()).append("\n");
+                
+                int positiveReactions = review.getPositiveReactions() != null ? review.getPositiveReactions().size() : 0;
+                int negativeReactions = review.getNegativeReactions() != null ? review.getNegativeReactions().size() : 0;
+                page.append("Reactions: 👍 ").append(positiveReactions)
+                    .append(" | 👎 ").append(negativeReactions).append("\n");
+                
+                page.append("---------------------------------\n");
+            }
+        }
+
+        return page.toString();
+    }
 }
+

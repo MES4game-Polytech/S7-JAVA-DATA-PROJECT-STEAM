@@ -175,4 +175,28 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
+    public void sendSendGamesPage(String page) {
+        String topic = SendGamesPage.TOPIC;
+        String key = UUID.randomUUID().toString();
+        SendGamesPage event = SendGamesPage.newBuilder()
+                .setPage(page)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
+    public void sendSendGameReviews(String page) {
+        String topic = SendGameReviews.TOPIC;
+        String key = UUID.randomUUID().toString();
+        SendGameReviews event = SendGameReviews.newBuilder()
+                .setPage(page)
+                .build();
+
+        CompletableFuture<?> future = this.kafkaTemplate.send(topic, key, event);
+
+        future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
+    }
+
 }

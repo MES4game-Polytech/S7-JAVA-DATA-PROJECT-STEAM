@@ -1,0 +1,13 @@
+{
+    "name": "SendGamesPage",
+    "namespace": "org.pops.et4.jvm.project.schemas.events",
+    "doc": "Distributor sends a page of available games to the player",
+    "type": "record",
+    "fields": [
+        {
+            "name": "page",
+            "doc": "JSON string containing the games page data",
+            "type": "string"
+        }
+    ]
+}
