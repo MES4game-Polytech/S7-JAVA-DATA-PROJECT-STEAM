@@ -62,6 +62,11 @@ public class App {
                             running = false;
                             break;
 
+                        case "load-csv":
+                            System.out.println("Loading Data in DB...");
+                            this.handleCsvImport(publisherRepository, gameRepository);
+                            break;
+
                         case "start":
                             System.out.println("> Starting Listener(s)");
                             for (String listenerId: args)
@@ -217,8 +222,8 @@ public class App {
     private Platform mapPlatform(String csvPlatform) {
         try {
             return switch (csvPlatform) {
-                case "WS", "PC" -> Platform.WINDOWS;
-                case "2600" -> Platform.ATARI2600;
+                case "WS" -> Platform.PC;
+                case "2600" -> Platform.ATARI_2600;
                 case "SAT" -> Platform.SATURN;
                 case "3DS" -> Platform.NINTENDO_3DS;
                 case "WIIU" -> Platform.WII_U;
