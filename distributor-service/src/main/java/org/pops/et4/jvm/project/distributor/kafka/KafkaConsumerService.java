@@ -212,6 +212,7 @@ public class KafkaConsumerService {
             
             producerService.sendGameReviewed(
                 savedReview.getId(),
+                savedReview.getGameId(),
                 savedReview.getPlayer().getDistributor().getId(),
                 savedReview.getRating(),
                 savedReview.getComment(),

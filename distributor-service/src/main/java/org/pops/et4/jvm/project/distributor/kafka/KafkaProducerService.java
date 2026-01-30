@@ -113,11 +113,12 @@ public class KafkaProducerService {
         future.whenComplete((result, ex) -> System.out.println("[Producer] " + topic + "(" + key + "): " + (ex==null ? result : ex.getMessage())));
     }
 
-    public void sendGameReviewed(Long reviewId, Long distributorId, Integer rating, String comment, Instant publicationDate, java.util.List<Long> positiveReactionPlayerIds, java.util.List<Long> negativeReactionPlayerIds) {
+    public void sendGameReviewed(Long reviewId, Long gameId, Long distributorId, Integer rating, String comment, Instant publicationDate, java.util.List<Long> positiveReactionPlayerIds, java.util.List<Long> negativeReactionPlayerIds) {
         String topic = GameReviewed.TOPIC;
         String key = UUID.randomUUID().toString();
         GameReviewed event = GameReviewed.newBuilder()
                 .setReviewId(reviewId)
+                .setGameId(gameId)
                 .setDistributorId(distributorId)
                 .setRating(rating)
                 .setComment(comment)

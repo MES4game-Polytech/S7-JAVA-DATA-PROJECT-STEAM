@@ -10,6 +10,11 @@
             "type": "long"
         },
         {
+            "name": "gameId",
+            "doc": "ID of the game",
+            "type": "long"
+        },
+        {
             "name": "distributorId",
             "doc": "ID of the distributor",
             "type": "long"
