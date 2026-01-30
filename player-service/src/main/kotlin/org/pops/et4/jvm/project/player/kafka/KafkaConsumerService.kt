@@ -70,7 +70,7 @@ class KafkaConsumerService(
     /**
      * Consumer for PatchDistributed event
      * Triggered when a game update/patch is available
-     * Should notify players 
+     * Should notify players
      */
     @KafkaListener(
         id = PATCH_DISTRIBUTED_CONSUMER_BEAN_NAME,

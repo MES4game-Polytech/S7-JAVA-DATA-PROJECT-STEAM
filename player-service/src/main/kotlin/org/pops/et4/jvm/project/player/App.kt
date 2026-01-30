@@ -240,6 +240,24 @@ class App {
                                 producer.sendAskPlayerPage(args[0].toLong())
                             }
                         }
+                        "ask-games" -> {
+                            println("> Requesting Games Page...")
+                            if (args.size < 2) {
+                                System.err.println("Usage: ask-games [distributorId] [platform]")
+                            } else if (args[1] !in VALID_PLATFORMS) {
+                                System.err.println("Error: Invalid platform '${args[1]}'. Valid platforms: ${VALID_PLATFORMS.joinToString(", ")}")
+                            } else {
+                                producer.sendAskGamesPage(args[0].toLong(), args[1])
+                            }
+                        }
+                        "ask-reviews" -> {
+                            println("> Requesting Game Reviews...")
+                            if (args.size < 2) {
+                                System.err.println("Usage: ask-reviews [distributorId] [gameId]")
+                            } else {
+                                producer.sendAskGameReviews(args[0].toLong(), args[1].toLong())
+                            }
+                        }
                         
                         // === DATABASE COMMANDS ===
                         "get-installed" -> {
@@ -283,6 +301,8 @@ class App {
         println("* Remove from Wishlist          wishlist-remove [playerId] [gameId]")
         println("* React to Review               react [playerId] [reviewId] [0=NOTHING|1=POSITIVE|2=NEGATIVE]")
         println("* Ask Player Page               ask-page [distributorId]")
+        println("* Ask Games Page                ask-games [distributorId] [platform]")
+        println("* Ask Game Reviews              ask-reviews [distributorId] [gameId]")
         println()
         println("DATABASE COMMANDS:")
         println("* Get Installed Games           get-installed")
