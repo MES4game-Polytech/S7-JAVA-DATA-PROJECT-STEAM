@@ -18,12 +18,43 @@ class KafkaProducerService(
 	companion object {
         const val BEAN_NAME = "playerServiceKafkaProducerService"
         
-        // Valid platform values
+        // Valid platform values (must match Platform enum in 03_player.avpr)
         val VALID_PLATFORMS = setOf(
-            "WINDOWS", "MACOS", "LINUX", 
-            "PS5", "PS4", 
-            "XBOX_SERIES", "XBOX_ONE", 
-            "SWITCH2", "SWITCH"
+            "ATARI_2600",
+            "INTERACTIVE_3D0",
+            "NINTENDO_3DS",
+            "DREAM_CAST",
+            "DS",
+            "GAME_BOY",
+            "GAME_BOY_ADVANCED",
+            "GAME_CUBE",
+            "GENESIS",
+            "GAME_GEAR",
+            "N64",
+            "NES",
+            "NEO_GEO",
+            "PCFX",
+            "PS",
+            "PS2",
+            "PS3",
+            "PS4",
+            "PS5",
+            "PSP",
+            "PS_VITA",
+            "SATURN",
+            "SEGA_CD",
+            "SUPER_NES",
+            "SWITCH",
+            "SWITCH2",
+            "TURBO_GRAF",
+            "PC",
+            "WII",
+            "WII_U",
+            "XBOX_360",
+            "XBOX",
+            "XBOX_ONE",
+            "XBOX_SERIES",
+            "UNKNOWN"
         )
     }
 
@@ -304,6 +335,44 @@ class KafkaProducerService(
         val key = UUID.randomUUID().toString()
         val event = AskPlayerPage.newBuilder()
             .setDistributorId(distributorId)
+            .build()
+
+        val future = kafkaTemplate.send(topic, key, event)
+
+        future.whenComplete { result, ex ->
+            val message = ex?.message ?: result
+            println("[Producer] $topic($key): $message")
+        }
+    }
+
+    fun sendAskGamesPage(distributorId: Long, platform: String) {
+        // Validate platform
+        if (platform !in VALID_PLATFORMS) {
+            println("[Error] Invalid platform: $platform. Valid platforms: ${VALID_PLATFORMS.joinToString(", ")}")
+            return
+        }
+        
+        val topic = AskGamesPage.TOPIC
+        val key = UUID.randomUUID().toString()
+        val event = AskGamesPage.newBuilder()
+            .setDistributorId(distributorId)
+            .setPlatform(platform)
+            .build()
+
+        val future = kafkaTemplate.send(topic, key, event)
+
+        future.whenComplete { result, ex ->
+            val message = ex?.message ?: result
+            println("[Producer] $topic($key): $message")
+        }
+    }
+
+    fun sendAskGameReviews(distributorId: Long, gameId: Long) {
+        val topic = AskGameReviews.TOPIC
+        val key = UUID.randomUUID().toString()
+        val event = AskGameReviews.newBuilder()
+            .setDistributorId(distributorId)
+            .setGameId(gameId)
             .build()
 
         val future = kafkaTemplate.send(topic, key, event)
