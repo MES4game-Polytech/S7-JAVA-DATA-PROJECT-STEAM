@@ -307,6 +307,9 @@ public class App {
             long id = Long.parseLong(args[0]);
             gameRepo.findById(id).ifPresentOrElse(
                     game -> {
+                        // force l'initialisation pour éviter le lazy error
+                        game.getPlatforms().size();
+                        game.getGenres().size();
                         producer.sendGamePublished(game); // On envoie l'objet complet
                         System.out.println("> Game '" + game.getName() + "' send to the Distributor.");
                     },
