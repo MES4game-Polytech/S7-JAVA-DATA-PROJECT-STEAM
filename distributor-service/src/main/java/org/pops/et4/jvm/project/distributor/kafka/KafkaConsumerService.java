@@ -39,6 +39,8 @@ public class KafkaConsumerService {
     public static final String ADD_WISHED_GAME_CONSUMER_BEAN_NAME = "distributorServiceAddWishedGameConsumer";
     public static final String REMOVE_WISHED_GAME_CONSUMER_BEAN_NAME = "distributorServiceRemoveWishedGameConsumer";
     public static final String ASK_PLAYER_PAGE_CONSUMER_BEAN_NAME = "distributorServiceAskPlayerPageConsumer";
+    public static final String ASK_GAMES_PAGE_CONSUMER_BEAN_NAME = "distributorServiceAskGamesPageConsumer";
+    public static final String ASK_GAME_REVIEWS_CONSUMER_BEAN_NAME = "distributorServiceAskGameReviewsConsumer";
 
     private final KafkaProducerService producerService;
     private final DistributorService distributorService;
@@ -120,11 +122,20 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("gamePublishedConsumer", Instant.now(), record.key(), record.value()));
         GamePublished event = record.value();
 
-        // Business logic: Create DistributedGame and send game-distributed event
-        var distributedGame = distributorService.gamePublished(event);
-        String gameName = distributorService.getGameName(event.getGameId());
-        producerService.sendGameDistributed(distributedGame.getDistributor().getId(), event.getGameId(), gameName);
+        // Business logic: Create DistributedGame for ALL distributors and send game-distributed event for each
+        List<DistributedGame> distributedGames = distributorService.gamePublished(event);
+        String gameName = event.getGameName();
+        
+        // Send GameDistributed event for each distributor
+        for (DistributedGame distributedGame : distributedGames) {
+            producerService.sendGameDistributed(
+                distributedGame.getDistributor().getId(), 
+                event.getGameId(), 
+                gameName
+            );
+        }
 
+        System.out.println("[Consumer] " + GamePublished.TOPIC + "(" + record.key() + "): Game distributed to " + distributedGames.size() + " distributor(s)");
         System.out.println("[Consumer] " + GamePublished.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -139,11 +150,21 @@ public class KafkaConsumerService {
         this.logs.add(new ConsumeLog<>("patchPublishedConsumer", Instant.now(), record.key(), record.value()));
         PatchPublished event = record.value();
 
-        // Business logic: Update DistributedGame version and send patch-distributed event
-        var distributedGame = distributorService.patchPublished(event);
-        String gameName = distributorService.getGameName(event.getGameId());
-        producerService.sendPatchDistributed(distributedGame.getDistributor().getId(), event.getGameId(), event.getVersion(), gameName);
+        // Business logic: Update DistributedGame version for ALL distributors and send patch-distributed event for each
+        List<DistributedGame> distributedGames = distributorService.patchPublished(event);
+        String gameName = event.getGameName();
+        
+        // Send PatchDistributed event for each distributor
+        for (DistributedGame distributedGame : distributedGames) {
+            producerService.sendPatchDistributed(
+                distributedGame.getDistributor().getId(), 
+                event.getGameId(), 
+                event.getVersion(), 
+                gameName
+            );
+        }
 
+        System.out.println("[Consumer] " + PatchPublished.TOPIC + "(" + record.key() + "): Patch distributed to " + distributedGames.size() + " distributor(s)");
         System.out.println("[Consumer] " + PatchPublished.TOPIC + "(" + record.key() + "): FINISHED");
     }
 
@@ -414,6 +435,52 @@ public class KafkaConsumerService {
         producerService.sendSendPlayerPage(playerPage);
 
         System.out.println("[Consumer] " + AskPlayerPage.TOPIC + "(" + record.key() + "): FINISHED");
+    }
+
+    @KafkaListener(
+            id = KafkaConsumerService.ASK_GAMES_PAGE_CONSUMER_BEAN_NAME,
+            containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
+            topics = AskGamesPage.TOPIC,
+            groupId = "${spring.kafka.consumer.group-id}"
+    )
+    @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
+    public void consumeAskGamesPage(ConsumerRecord<String, AskGamesPage> record) {
+        this.logs.add(new ConsumeLog<>("askGamesPageConsumer", Instant.now(), record.key(), record.value()));
+        AskGamesPage event = record.value();
+
+        try {
+            // Business logic: Generate and send games page
+            String gamesPage = distributorService.buildGamesPage(event.getDistributorId(), event.getPlatform());
+            producerService.sendSendGamesPage(gamesPage);
+            System.out.println("[Consumer] " + AskGamesPage.TOPIC + "(" + record.key() + "): Games page sent for platform " + event.getPlatform());
+        } catch (Exception e) {
+            System.err.println("[Consumer] " + AskGamesPage.TOPIC + "(" + record.key() + "): Error - " + e.getMessage());
+        }
+
+        System.out.println("[Consumer] " + AskGamesPage.TOPIC + "(" + record.key() + "): FINISHED");
+    }
+
+    @KafkaListener(
+            id = KafkaConsumerService.ASK_GAME_REVIEWS_CONSUMER_BEAN_NAME,
+            containerFactory = KafkaConfig.KAFKA_LISTENER_CONTAINER_BEAN_NAME,
+            topics = AskGameReviews.TOPIC,
+            groupId = "${spring.kafka.consumer.group-id}"
+    )
+    @Transactional(transactionManager = DistributorDbConfig.TRANSACTION_MANAGER_BEAN_NAME)
+    public void consumeAskGameReviews(ConsumerRecord<String, AskGameReviews> record) {
+        this.logs.add(new ConsumeLog<>("askGameReviewsConsumer", Instant.now(), record.key(), record.value()));
+        AskGameReviews event = record.value();
+
+        try {
+            // Business logic: Generate and send game reviews page
+            String reviewsPage = distributorService.buildGameReviewsPage(event.getDistributorId(), event.getGameId());
+            producerService.sendSendGameReviews(reviewsPage);
+            System.out.println("[Consumer] " + AskGameReviews.TOPIC + "(" + record.key() + "): Reviews sent for game " + event.getGameId());
+        } catch (Exception e) {
+            System.err.println("[Consumer] " + AskGameReviews.TOPIC + "(" + record.key() + "): Error - " + e.getMessage());
+        }
+
+        System.out.println("[Consumer] " + AskGameReviews.TOPIC + "(" + record.key() + "): FINISHED");
     }
 }
 

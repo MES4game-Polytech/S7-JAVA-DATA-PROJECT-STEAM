@@ -313,4 +313,42 @@ class KafkaProducerService(
             println("[Producer] $topic($key): $message")
         }
     }
+
+    fun sendAskGamesPage(distributorId: Long, platform: String) {
+        // Validate platform
+        if (platform !in VALID_PLATFORMS) {
+            println("[Error] Invalid platform: $platform. Valid platforms: ${VALID_PLATFORMS.joinToString(", ")}")
+            return
+        }
+        
+        val topic = AskGamesPage.TOPIC
+        val key = UUID.randomUUID().toString()
+        val event = AskGamesPage.newBuilder()
+            .setDistributorId(distributorId)
+            .setPlatform(platform)
+            .build()
+
+        val future = kafkaTemplate.send(topic, key, event)
+
+        future.whenComplete { result, ex ->
+            val message = ex?.message ?: result
+            println("[Producer] $topic($key): $message")
+        }
+    }
+
+    fun sendAskGameReviews(distributorId: Long, gameId: Long) {
+        val topic = AskGameReviews.TOPIC
+        val key = UUID.randomUUID().toString()
+        val event = AskGameReviews.newBuilder()
+            .setDistributorId(distributorId)
+            .setGameId(gameId)
+            .build()
+
+        val future = kafkaTemplate.send(topic, key, event)
+
+        future.whenComplete { result, ex ->
+            val message = ex?.message ?: result
+            println("[Producer] $topic($key): $message")
+        }
+    }
 }
